@@ -110,14 +110,10 @@ function ArtworkCard({
           />
         ) : (
           <div className="relative flex h-full items-center justify-center">
-            {/* Skeleton shimmer while image loads */}
-            {!imgLoaded && (
-              <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/20 to-muted/5" />
-            )}
             <img
               src={artwork.imageUrl}
               alt={`${artwork.title} by ${artwork.artist}`}
-              className={`max-h-full max-w-full object-contain transition-opacity duration-500 group-hover:opacity-0 ${imgLoaded ? "opacity-70" : "opacity-0"}`}
+              className={`max-h-full max-w-full object-contain transition-all duration-700 group-hover:opacity-0 ${imgLoaded ? "opacity-70 blur-0" : "opacity-40 blur-xl scale-105"}`}
               loading="lazy"
               onLoad={() => setImgLoaded(true)}
             />
