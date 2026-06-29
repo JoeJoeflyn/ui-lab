@@ -89,18 +89,32 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
         />
 
         {effect.implemented ? (
-          <ParticleText
-            text={effect.name}
-            hoverMode={(effect.kind === "entrance" ? "dissolve" : effect.slug) as never}
-            entranceMode={effect.kind === "entrance" ? (effect.slug as never) : undefined}
-            entranceLoop={effect.kind === "entrance"}
-            compact
-            particleCount={2500}
-            cursorRadius={80}
-            color={[0.55, 0.65, 0.85]}
-            glowColor={[0.95, 0.75, 0.3]}
-            opacity={hovered ? 0.95 : 0.5}
-          />
+          hovered ? (
+            <ParticleText
+              text={effect.name}
+              hoverMode={(effect.kind === "entrance" ? "dissolve" : effect.slug) as never}
+              entranceMode={effect.kind === "entrance" ? (effect.slug as never) : undefined}
+              entranceLoop={effect.kind === "entrance"}
+              compact
+              particleCount={2500}
+              cursorRadius={80}
+              color={[0.55, 0.65, 0.85]}
+              glowColor={[0.95, 0.75, 0.3]}
+              opacity={0.95}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <span
+                className="select-none text-xl font-bold tracking-wide transition-colors duration-300"
+                style={{
+                  fontFamily: "var(--font-heading), serif",
+                  color: "oklch(0.55 0.03 260 / 0.35)",
+                }}
+              >
+                {effect.name}
+              </span>
+            </div>
+          )
         ) : (
           <div className="flex h-full items-center justify-center">
             <span
@@ -176,6 +190,8 @@ function oklch(l: number, c: number, h: number, a = 1) {
  */
 export function EffectHero({ effects }: { effects: Effect[] }) {
   const implemented = effects.filter((e) => e.implemented);
+  // Cap dots to 12 — cycle through the full set with index math
+  const DOT_COUNT = Math.min(12, implemented.length);
   const [idx, setIdx] = useState(0);
   const current = implemented[idx] ?? implemented[0];
 
@@ -255,19 +271,22 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
             </svg>
           </button>
 
-          {/* Dots */}
-          {implemented.map((e, i) => (
-            <button
-              key={e.slug}
-              onClick={() => setIdx(i)}
-              className={`rounded-full transition-all duration-300 ${
-                i === idx
-                  ? "bg-gold w-3 h-3 shadow-[0_0_8px_oklch(0.82_0.16_85/0.4)]"
-                  : "bg-gold/20 hover:bg-gold/40 w-2 h-2"
-              }`}
-              aria-label={`Show ${e.name}`}
-            />
-          ))}
+          {/* Dots — capped at 12, map to evenly spaced indices */}
+          {Array.from({ length: DOT_COUNT }, (_, dotIdx) => {
+            const effectIdx = Math.round((dotIdx / DOT_COUNT) * implemented.length) % implemented.length;
+            return (
+              <button
+                key={dotIdx}
+                onClick={() => setIdx(effectIdx)}
+                className={`rounded-full transition-all duration-300 ${
+                  effectIdx === idx
+                    ? "bg-gold w-3 h-3 shadow-[0_0_8px_oklch(0.82_0.16_85/0.4)]"
+                    : "bg-gold/20 hover:bg-gold/40 w-2 h-2"
+                }`}
+                aria-label={`Show ${implemented[effectIdx]?.name}`}
+              />
+            );
+          })}
 
           {/* Next arrow */}
           <button
@@ -293,7 +312,8 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
 
       {/* Interaction hint */}
       <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/40">
-        Move cursor across canvas · Navigate with dots
+        Move cursor across canvas · Navigate with dots ·{" "}
+        <span className="text-gold/50">{idx + 1} / {implemented.length}</span>
       </p>
     </section>
   );
