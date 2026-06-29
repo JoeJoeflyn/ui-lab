@@ -112,13 +112,12 @@ function ArtworkCard({
       <div className="painting-glow" />
 
       {/* Canvas area — image rendered as particles */}
-      <div className="relative h-56 overflow-hidden sm:h-64" style={{ zIndex: 2, background: "oklch(0.06 0.03 260)" }}>
+      <div className="relative h-56 overflow-hidden sm:h-64" style={{ zIndex: 2, background: "oklch(0.04 0.02 260)" }}>
         <ParticlePainting
           artwork={artwork}
           className="h-full w-full"
-          particleCount={10000}
-          cursorRadius={120}
-          scatterStrength={18}
+          cursorRadius={90}
+          scatterStrength={4}
         />
       </div>
 
