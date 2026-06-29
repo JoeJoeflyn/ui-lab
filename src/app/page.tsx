@@ -58,7 +58,7 @@ export default function HomePage() {
   let cardIndex = 0;
 
   return (
-    <main className="relative min-h-screen brushstroke-bg">
+    <main className="relative brushstroke-bg">
       {/* ===== Grain Texture Overlay ===== */}
       <div className="grain-overlay" aria-hidden="true" />
 
