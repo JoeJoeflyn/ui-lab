@@ -126,6 +126,8 @@ export function ParticlePainting({
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
       const points = new THREE.Points(geometry, material);
+      points.frustumCulled = false;
+      geometry.computeBoundingSphere();
       scene.add(points);
 
       const homePositions = new Float32Array(positions);
@@ -301,7 +303,7 @@ function sampleImage(
     colors[i * 3 + 1] = g;
     colors[i * 3 + 2] = b;
 
-    sizes[i] = 1.2 + Math.random() * 1.8;
+    sizes[i] = 1.8 + Math.random() * 2.4;
     randoms[i] = Math.random();
   }
 

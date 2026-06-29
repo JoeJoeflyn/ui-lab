@@ -114,17 +114,21 @@ function ArtworkCard({
       {/* Glow */}
       <div className="painting-glow" />
 
-      {/* Canvas area — image with particle overlay */}
-      <div className="relative h-56 overflow-hidden sm:h-64" style={{ zIndex: 2 }}>
-        {/* Base image — always visible */}
+      {/* Canvas area — image cross-fades to particles on hover */}
+      <div className="relative h-56 overflow-hidden sm:h-64" style={{ zIndex: 2, background: "oklch(0.06 0.03 260)" }}>
+        {/* Base image — fades out on hover */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={artwork.imageUrl}
           alt={artwork.title}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="absolute inset-0 h-full w-full object-contain transition-all duration-700"
+          style={{
+            opacity: hovered ? 0 : 1,
+            transform: hovered ? "scale(1.05)" : "scale(1)",
+          }}
           loading="lazy"
         />
-        {/* Particle overlay — fades in on hover */}
+        {/* Particle painting — fades in on hover */}
         <div
           className="absolute inset-0 transition-opacity duration-500"
           style={{ opacity: hovered ? 1 : 0 }}
@@ -137,6 +141,12 @@ function ArtworkCard({
             scatterStrength={hovered ? 18 : 0}
           />
         </div>
+        {/* Hint badge */}
+        {!hovered && (
+          <div className="pointer-events-none absolute bottom-2 right-2">
+            <span className="gold-pill text-[8px]">hover to scatter</span>
+          </div>
+        )}
       </div>
 
       {/* Plaque */}
