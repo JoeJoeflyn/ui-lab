@@ -1,17 +1,17 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+import * as THREE from "three";
 import type { Artwork } from "@/lib/artworks";
 
 /* ──────────────────────────────────────────────────────────────
- * ParticlePainting — renders an artwork as interactive particles
+ * ParticlePainting — renders an artwork as GPU particles
  *
- * Based on the proven Canvas 2D technique:
- *   - Sample image on a grid (every Nth pixel) for even coverage
- *   - Each particle has: home position, current position, velocity
- *   - Mouse repels particles within influence radius
- *   - Particles spring back to home with damping + jitter
- *   - Particle size varies with pixel brightness
+ * Three.js with a single Points draw call (fast):
+ *   - Grid sample image pixels (every 3rd pixel for even coverage)
+ *   - Each particle gets position + color from the pixel
+ *   - Brightness → particle size
+ *   - Mouse repulsion in JS, GPU handles rendering
  * ────────────────────────────────────────────────────────────── */
 
 interface Props {
@@ -22,40 +22,26 @@ interface Props {
   scatterStrength?: number;
 }
 
-interface Particle {
-  // Home position (where the particle belongs in the image)
-  hx: number;
-  hy: number;
-  // Current position
-  x: number;
-  y: number;
-  // Velocity
-  vx: number;
-  vy: number;
-  // Color
-  r: number;
-  g: number;
-  b: number;
-  // Size (varies with brightness)
-  size: number;
-}
-
 export function ParticlePainting({
   artwork,
   className = "",
   cursorRadius = 100,
-  scatterStrength = 3,
+  scatterStrength = 4,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
-  const stateRef = useRef<{
-    particles: Particle[];
+  const sceneRef = useRef<{
+    scene: THREE.Scene;
+    camera: THREE.OrthographicCamera;
+    renderer: THREE.WebGLRenderer;
+    geometry: THREE.BufferGeometry;
+    material: THREE.ShaderMaterial;
     raf: number;
     mouse: { x: number; y: number; active: boolean };
-    canvasW: number;
-    canvasH: number;
-    dpr: number;
+    homePositions: Float32Array;
+    currentPositions: Float32Array;
+    count: number;
   } | null>(null);
 
   useEffect(() => {
@@ -63,26 +49,14 @@ export function ParticlePainting({
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-    // Load image
     const img = new Image();
     img.src = artwork.imageUrl;
 
     img.onload = () => {
       if (!container || !canvas) return;
       const rect = container.getBoundingClientRect();
-      const displayW = rect.width || 300;
-      const displayH = rect.height || 300;
-
-      canvas.width = Math.floor(displayW * dpr);
-      canvas.height = Math.floor(displayH * dpr);
-      canvas.style.width = `${displayW}px`;
-      canvas.style.height = `${displayH}px`;
-      ctx.scale(dpr, dpr);
+      const w = rect.width || 300;
+      const h = rect.height || 300;
 
       // Sample image on a grid
       const sampleCanvas = document.createElement("canvas");
@@ -96,27 +70,27 @@ export function ParticlePainting({
       const imageData = sctx.getImageData(0, 0, sampleW, sampleH);
       const pixels = imageData.data;
 
-      // Calculate scale to fit image in display area (contain)
+      // Calculate contain scaling
       const imgAspect = sampleW / sampleH;
-      const boxAspect = displayW / displayH;
+      const boxAspect = w / h;
       let scaleW: number, scaleH: number, offsetX: number, offsetY: number;
       if (imgAspect > boxAspect) {
-        // Image wider than box — fit width
-        scaleW = displayW;
-        scaleH = displayW / imgAspect;
+        scaleW = w;
+        scaleH = w / imgAspect;
         offsetX = 0;
-        offsetY = (displayH - scaleH) / 2;
+        offsetY = (h - scaleH) / 2;
       } else {
-        // Image taller than box — fit height
-        scaleH = displayH;
-        scaleW = displayH * imgAspect;
-        offsetX = (displayW - scaleW) / 2;
+        scaleH = h;
+        scaleW = h * imgAspect;
+        offsetX = (w - scaleW) / 2;
         offsetY = 0;
       }
 
-      // Grid sampling — every STEP pixels
+      // Grid sample — every STEP pixels
       const STEP = 3;
-      const particles: Particle[] = [];
+      const positions: number[] = [];
+      const colors: number[] = [];
+      const sizes: number[] = [];
 
       for (let py = 0; py < sampleH; py += STEP) {
         for (let px = 0; px < sampleW; px += STEP) {
@@ -125,99 +99,151 @@ export function ParticlePainting({
           const g = pixels[idx + 1];
           const b = pixels[idx + 2];
           const a = pixels[idx + 3];
-
-          // Skip transparent pixels
           if (a < 30) continue;
 
-          // Brightness determines particle size
           const brightness = (r + g + b) / 3;
-          const size = 0.8 + (brightness / 255) * 2.2;
+          const size = 0.8 + (brightness / 255) * 2.5;
 
-          // Map to display coordinates
-          const dx = (px / sampleW) * scaleW + offsetX;
-          const dy = (py / sampleH) * scaleH + offsetY;
+          const dx = (px / sampleW) * scaleW + offsetX - w / 2;
+          const dy = -(py / sampleH) * scaleH - offsetY + h / 2;
 
-          particles.push({
-            hx: dx,
-            hy: dy,
-            x: dx + (Math.random() - 0.5) * 4,
-            y: dy + (Math.random() - 0.5) * 4,
-            vx: 0,
-            vy: 0,
-            r,
-            g,
-            b,
-            size,
-          });
+          positions.push(dx, dy, 0);
+          colors.push(r / 255, g / 255, b / 255);
+          sizes.push(size);
         }
       }
 
-      const state = {
-        particles,
+      const count = positions.length / 3;
+      const homePositions = new Float32Array(positions);
+      const currentPositions = new Float32Array(positions);
+
+      // Build geometry
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(currentPositions, 3));
+      geometry.setAttribute("aColor", new THREE.BufferAttribute(new Float32Array(colors), 3));
+      geometry.setAttribute("aSize", new THREE.BufferAttribute(new Float32Array(sizes), 1));
+      geometry.computeBoundingSphere();
+
+      // Shader material — single draw call
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+        },
+        vertexShader: `
+          attribute vec3 aColor;
+          attribute float aSize;
+          uniform float uPixelRatio;
+          varying vec3 vColor;
+          void main() {
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            gl_PointSize = aSize * uPixelRatio * (150.0 / -mvPosition.z);
+            gl_Position = projectionMatrix * mvPosition;
+            vColor = aColor;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vColor;
+          void main() {
+            vec2 c = gl_PointCoord - 0.5;
+            float d = length(c);
+            if (d > 0.5) discard;
+            float alpha = 1.0 - smoothstep(0.3, 0.5, d);
+            gl_FragColor = vec4(vColor, alpha * 0.9);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+      });
+
+      // Scene
+      const scene = new THREE.Scene();
+      const camera = new THREE.OrthographicCamera(-w / 2, w / 2, h / 2, -h / 2, -500, 500);
+      camera.position.z = 100;
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: false,
+      });
+      renderer.setSize(w, h, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const points = new THREE.Points(geometry, material);
+      points.frustumCulled = false;
+      scene.add(points);
+
+      const ctx = {
+        scene,
+        camera,
+        renderer,
+        geometry,
+        material,
         raf: 0,
         mouse: { x: 0, y: 0, active: false },
-        canvasW: displayW,
-        canvasH: displayH,
-        dpr,
+        homePositions,
+        currentPositions,
+        count,
       };
-      stateRef.current = state;
+      sceneRef.current = ctx;
       setLoaded(true);
 
-      // Animation loop
+      // Animation loop — JS physics, GPU render
       const animate = () => {
-        state.raf = requestAnimationFrame(animate);
+        ctx.raf = requestAnimationFrame(animate);
 
-        ctx.clearRect(0, 0, displayW, displayH);
-
-        const mx = state.mouse.x;
-        const my = state.mouse.y;
-        const mouseActive = state.mouse.active;
+        const posAttr = ctx.geometry.attributes.position as THREE.BufferAttribute;
+        const arr = posAttr.array as Float32Array;
+        const home = ctx.homePositions;
+        const mx = ctx.mouse.x;
+        const my = ctx.mouse.y;
+        const active = ctx.mouse.active;
         const radius = cursorRadius;
         const radiusSq = radius * radius;
+        const strength = scatterStrength;
 
-        for (let i = 0; i < particles.length; i++) {
-          const p = particles[i];
+        for (let i = 0; i < ctx.count; i++) {
+          const i3 = i * 3;
+          const hx = home[i3];
+          const hy = home[i3 + 1];
+          const cx = arr[i3];
+          const cy = arr[i3 + 1];
 
           // Mouse repulsion
-          if (mouseActive) {
-            const dx = p.x - mx;
-            const dy = p.y - my;
+          if (active) {
+            const dx = cx - mx;
+            const dy = cy - my;
             const distSq = dx * dx + dy * dy;
             if (distSq < radiusSq && distSq > 0.01) {
               const dist = Math.sqrt(distSq);
-              const force = (1 - dist / radius) * scatterStrength;
-              p.vx += (dx / dist) * force;
-              p.vy += (dy / dist) * force;
+              const force = (1 - dist / radius) * strength;
+              const pushX = (dx / dist) * force;
+              const pushY = (dy / dist) * force;
+              // Apply as velocity offset (spring will pull back)
+              arr[i3] = cx + pushX;
+              arr[i3 + 1] = cy + pushY;
             }
           }
 
           // Spring back to home
-          p.vx += (p.hx - p.x) * 0.04;
-          p.vy += (p.hy - p.y) * 0.04;
-
-          // Friction
-          p.vx *= 0.88;
-          p.vy *= 0.88;
-
-          // Update position
-          p.x += p.vx;
-          p.y += p.vy;
-
-          // Draw
-          ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},0.9)`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
+          arr[i3] += (hx - arr[i3]) * 0.08;
+          arr[i3 + 1] += (hy - arr[i3 + 1]) * 0.08;
         }
+        posAttr.needsUpdate = true;
+
+        renderer.render(scene, camera);
       };
       animate();
     };
 
     return () => {
-      const state = stateRef.current;
-      if (state) {
-        cancelAnimationFrame(state.raf);
-        stateRef.current = null;
+      const ctx = sceneRef.current;
+      if (ctx) {
+        cancelAnimationFrame(ctx.raf);
+        ctx.renderer.dispose();
+        ctx.geometry.dispose();
+        ctx.material.dispose();
+        sceneRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,33 +255,31 @@ export function ParticlePainting({
     if (!container) return;
 
     const onMove = (e: MouseEvent) => {
-      const state = stateRef.current;
-      if (!state) return;
+      const ctx = sceneRef.current;
+      if (!ctx) return;
       const rect = container.getBoundingClientRect();
-      state.mouse.x = e.clientX - rect.left;
-      state.mouse.y = e.clientY - rect.top;
-      state.mouse.active = true;
+      ctx.mouse.x = e.clientX - rect.left - rect.width / 2;
+      ctx.mouse.y = -(e.clientY - rect.top - rect.height / 2);
+      ctx.mouse.active = true;
     };
 
     const onLeave = () => {
-      const state = stateRef.current;
-      if (state) {
-        state.mouse.active = false;
-      }
+      const ctx = sceneRef.current;
+      if (ctx) ctx.mouse.active = false;
     };
 
     const onTouch = (e: TouchEvent) => {
-      const state = stateRef.current;
-      if (!state || e.touches.length === 0) return;
+      const ctx = sceneRef.current;
+      if (!ctx || e.touches.length === 0) return;
       const rect = container.getBoundingClientRect();
-      state.mouse.x = e.touches[0].clientX - rect.left;
-      state.mouse.y = e.touches[0].clientY - rect.top;
-      state.mouse.active = true;
+      ctx.mouse.x = e.touches[0].clientX - rect.left - rect.width / 2;
+      ctx.mouse.y = -(e.touches[0].clientY - rect.top - rect.height / 2);
+      ctx.mouse.active = true;
     };
 
     const onTouchEnd = () => {
-      const state = stateRef.current;
-      if (state) state.mouse.active = false;
+      const ctx = sceneRef.current;
+      if (ctx) ctx.mouse.active = false;
     };
 
     container.addEventListener("mousemove", onMove);
