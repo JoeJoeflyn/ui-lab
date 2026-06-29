@@ -20,6 +20,7 @@ import type { Effect } from "@/lib/effects";
  */
 export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: number }) {
   const [hovered, setHovered] = useState(false);
+  const [copied, setCopied] = useState(false);
   const cardRef = useRef<HTMLAnchorElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -43,6 +44,27 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
   }, [index]);
 
   const delayClass = `reveal-delay-${(index % 6) + 1}`;
+
+  const handleCopy = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const code = `<ParticleText
+  text="Your Text"
+  hoverMode="${effect.slug}"
+  particleCount={8000}
+  cursorRadius={120}
+  color={[0.6, 0.75, 0.9]}
+  glowColor={[0.95, 0.75, 0.3]}
+  opacity={0.9}
+/>`;
+      navigator.clipboard.writeText(code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    },
+    [effect.slug],
+  );
 
   return (
     <Link
@@ -117,6 +139,16 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
           >
             {effect.name}
           </h3>
+          {effect.implemented && (
+            <button
+              onClick={handleCopy}
+              className="flex flex-shrink-0 items-center gap-1 rounded-md border border-gold/15 px-2 py-1 font-mono text-[9px] uppercase tracking-wider transition-all duration-200 hover:border-gold/40"
+              style={{ color: copied ? "oklch(0.82 0.16 85)" : "oklch(0.82 0.16 85 / 50%)" }}
+              aria-label="Copy component code"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          )}
         </div>
         <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/70">
           {effect.feel}
