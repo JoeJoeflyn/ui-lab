@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { ARTWORKS } from "@/lib/artworks";
 import { ParticlePainting } from "@/components/particle-painting";
 
@@ -15,6 +16,10 @@ import { ParticlePainting } from "@/components/particle-painting";
 const LOOKUP = new Map(ARTWORKS.map((a) => [a.id, a]));
 
 const DISPLAY_IDS = ARTWORKS.map((a) => a.id);
+
+// Tiny dark placeholder for blur-up effect (4x4 dark rect SVG)
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMwYzBmMWEiLz48L3N2Zz4=";
 
 export function ArtworkExhibit() {
   return (
@@ -109,12 +114,15 @@ function ArtworkCard({
             scatterStrength={4}
           />
         ) : (
-          <div className="relative flex h-full items-center justify-center">
-            <img
+          <div className="relative h-full w-full">
+            <Image
               src={artwork.imageUrl}
               alt={`${artwork.title} by ${artwork.artist}`}
-              className={`max-h-full max-w-full object-contain transition-all duration-700 group-hover:opacity-0 ${imgLoaded ? "opacity-70 blur-0" : "opacity-40 blur-xl scale-105"}`}
-              loading="lazy"
+              fill
+              className={`object-contain transition-all duration-700 group-hover:opacity-0 ${imgLoaded ? "opacity-70" : "opacity-0"}`}
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               onLoad={() => setImgLoaded(true)}
             />
           </div>
