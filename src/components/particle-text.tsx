@@ -177,11 +177,12 @@ export function ParticleText({
 
     // --- 6. Animation loop ---
     let frameId = 0;
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
+      timer.update();
+      const elapsed = timer.getElapsed();
 
       // Smooth strength toward target
       currentStrength += (targetStrength - currentStrength) * 0.08;

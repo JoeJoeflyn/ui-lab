@@ -8,32 +8,44 @@ import {
   type Effect,
 } from "@/lib/effects";
 import { EffectHero, EffectMiniCard } from "@/components/effect-cards";
+import { ArtworkExhibit } from "@/components/artwork-exhibit";
 
 function CategorySection({
   title,
   effects,
+  startIndex,
 }: {
   title: string;
   effects: Effect[];
+  startIndex: number;
 }) {
   if (effects.length === 0) return null;
+
   return (
-    <section className="mb-20">
-      <div className="mb-6 flex items-center gap-4">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-gold/80">
+    <div className="mb-10 last:mb-0">
+      {/* Category header — small gold label + count + brushstroke divider */}
+      <div className="mb-5 flex items-center gap-3">
+        <span
+          className="inline-block h-px w-5"
+          style={{ background: "oklch(0.82 0.16 85 / 40%)" }}
+        />
+        <h3
+          className="font-mono text-[10px] font-medium uppercase tracking-[0.2em]"
+          style={{ color: "oklch(0.82 0.16 85 / 65%)" }}
+        >
           {title}
-        </h2>
-        <span className="text-xs text-muted-foreground/60">
-          {effects.length} works
-        </span>
+        </h3>
+        <span className="gold-pill text-[8px]">{effects.length} works</span>
         <div className="brushstroke-divider flex-1" />
       </div>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {effects.map((e) => (
-          <EffectMiniCard key={e.slug} effect={e} />
+
+      {/* Card grid */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {effects.map((e, i) => (
+          <EffectMiniCard key={e.slug} effect={e} index={startIndex + i} />
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -41,43 +53,57 @@ export default function HomePage() {
   const hoverGrouped = groupByCategory(HOVER_EFFECTS);
   const entranceGrouped = groupByCategory(ENTRANCE_EFFECTS);
 
+  const hoverCategories = Object.keys(HOVER_CATEGORIES) as Array<
+    keyof typeof HOVER_CATEGORIES
+  >;
+  const entranceCategories = Object.keys(ENTRANCE_CATEGORIES) as Array<
+    keyof typeof ENTRANCE_CATEGORIES
+  >;
+
+  // Running index for staggered card reveals
+  let cardIndex = 0;
+
   return (
     <main className="relative min-h-screen brushstroke-bg">
-      {/* Swirling overlay */}
-      <div className="pointer-events-none fixed inset-0 swirl-overlay" />
+      {/* ===== Grain Texture Overlay ===== */}
+      <div className="grain-overlay" aria-hidden="true" />
 
-      {/* Ambient glow orbs — Starry Night colors */}
-      <div
-        className="glow-orb bg-starry-blue"
-        style={{ top: "-5%", left: "15%", width: "500px", height: "500px" }}
-      />
-      <div
-        className="glow-orb bg-gold"
-        style={{ top: "30%", right: "5%", width: "400px", height: "400px" }}
-      />
-      <div
-        className="glow-orb bg-starry-cyan"
-        style={{ bottom: "10%", left: "40%", width: "450px", height: "450px" }}
-      />
+      {/* ===== Swirling Background Orbs ===== */}
+      <div className="swirl-orb swirl-orb--cyan" aria-hidden="true" />
+      <div className="swirl-orb swirl-orb--gold" aria-hidden="true" />
+      <div className="swirl-orb swirl-orb--blue" aria-hidden="true" />
+      <div className="swirl-orb swirl-orb--indigo" aria-hidden="true" />
 
-      <div className="relative mx-auto max-w-7xl px-6 py-20">
-        {/* Hero — museum entrance */}
-        <section className="mb-16 text-center">
-          <p className="mb-4 text-xs uppercase tracking-[0.3em] text-gold/60">
+      {/* ===== Content ===== */}
+      <div className="relative mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        {/* ---- Hero / Museum Entrance ---- */}
+        <section className="mb-12 text-center sm:mb-16">
+          <p
+            className="mb-4 font-mono text-[10px] uppercase tracking-[0.35em]"
+            style={{ color: "oklch(0.82 0.16 85 / 55%)" }}
+          >
             Gallery of GPU Shader Art
           </p>
+
           <h1
-            className="text-5xl font-black tracking-tight sm:text-7xl"
+            className="gold-shimmer text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl"
             style={{ fontFamily: "var(--font-heading), serif" }}
           >
-            <span className="gold-shimmer">UI Lab</span>
+            UI Lab
           </h1>
-          <div className="mx-auto mt-6 mb-8 h-px w-32 bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
-          <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+
+          <div className="mx-auto mt-6 mb-6 h-px w-28 brushstroke-divider" />
+
+          <p
+            className="mx-auto max-w-2xl text-sm leading-relaxed sm:text-base"
+            style={{ color: "oklch(0.65 0.03 260)" }}
+          >
             An exhibition of{" "}
-            <span className="text-gold">{HOVER_EFFECTS.length} interactive</span>{" "}
+            <span style={{ color: "oklch(0.82 0.16 85)" }}>
+              {HOVER_EFFECTS.length} interactive
+            </span>{" "}
             and{" "}
-            <span className="text-starry-cyan">
+            <span style={{ color: "oklch(0.70 0.14 220)" }}>
               {ENTRANCE_EFFECTS.length} cinematic
             </span>{" "}
             particle text effects — each rendered in real-time with GLSL shaders.
@@ -85,97 +111,171 @@ export default function HomePage() {
           </p>
         </section>
 
-        {/* Live hero canvas — the centerpiece */}
+        {/* ---- Centerpiece Exhibit ---- */}
         <EffectHero effects={HOVER_EFFECTS} />
 
-        {/* Gallery navigation */}
-        <div className="mb-16 flex flex-wrap justify-center gap-4 text-xs">
+        {/* ---- Particle Paintings ---- */}
+        <ArtworkExhibit />
+
+        {/* ---- Gallery Navigation ---- */}
+        <nav className="mb-20 flex flex-wrap justify-center gap-5">
           <a
-            href="#hover"
-            className="plaque rounded-full px-5 py-2 text-gold/80 transition-colors hover:text-gold"
+            href="#west-wing"
+            className="plaque-gold group rounded-full px-5 py-2 text-xs transition-all duration-300 hover:px-6"
+            style={{ color: "oklch(0.82 0.16 85 / 75%)" }}
           >
+            <span className="mr-1.5 font-mono text-[9px] text-gold/40">01</span>
             Interactive Gallery
           </a>
           <a
-            href="#entrance"
-            className="plaque rounded-full px-5 py-2 text-starry-cyan/80 transition-colors hover:text-starry-cyan"
+            href="#east-wing"
+            className="plaque-gold group rounded-full px-5 py-2 text-xs transition-all duration-300 hover:px-6"
+            style={{ color: "oklch(0.82 0.16 85 / 75%)" }}
           >
+            <span className="mr-1.5 font-mono text-[9px] text-gold/40">02</span>
             Cinematic Collection
           </a>
-        </div>
+        </nav>
 
-        {/* Hover effects — West Wing */}
-        <section id="hover" className="mb-28">
-          <div className="mb-10 flex items-baseline justify-between">
-            <div>
-              <p className="mb-2 text-xs uppercase tracking-[0.2em] text-gold/50">
-                West Wing
-              </p>
-              <h2
-                className="text-3xl font-bold sm:text-4xl"
-                style={{ fontFamily: "var(--font-heading), serif" }}
+        {/* ================================================================
+            WEST WING — Interactive Effects (Hover)
+            ================================================================ */}
+        <section id="west-wing" className="mb-28">
+          {/* Wing header */}
+          <div className="mb-12">
+            <div className="mb-4 flex items-center gap-4">
+              <span
+                className="font-mono text-[10px] font-medium uppercase tracking-[0.3em]"
+                style={{ color: "oklch(0.82 0.16 85 / 40%)" }}
               >
-                Interactive Effects
-              </h2>
+                West Wing
+              </span>
+              <div className="brushstroke-divider flex-1" />
             </div>
-            <span className="text-sm text-muted-foreground">
-              {HOVER_EFFECTS.length} works on display
-            </span>
+
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <div>
+                <h2
+                  className="text-3xl font-bold sm:text-4xl"
+                  style={{
+                    fontFamily: "var(--font-heading), serif",
+                    color: "oklch(0.92 0.015 85)",
+                  }}
+                >
+                  Interactive Effects
+                </h2>
+                <p
+                  className="mt-1.5 max-w-lg text-xs leading-relaxed"
+                  style={{ color: "oklch(0.55 0.03 260 / 80%)" }}
+                >
+                  Move your cursor over each painting to reveal the particle effect.
+                  Each piece responds to your touch like a living canvas.
+                </p>
+              </div>
+              <span className="gold-pill text-[9px]">
+                {HOVER_EFFECTS.length} works
+              </span>
+            </div>
           </div>
-          {(Object.keys(HOVER_CATEGORIES) as Array<keyof typeof HOVER_CATEGORIES>).map(
-            (cat) => (
+
+          {/* Category groups */}
+          {hoverCategories.map((cat) => {
+            const start = cardIndex;
+            const effects = hoverGrouped[cat] ?? [];
+            cardIndex += effects.length;
+            return (
               <CategorySection
                 key={cat}
                 title={HOVER_CATEGORIES[cat]}
-                effects={hoverGrouped[cat] ?? []}
+                effects={effects}
+                startIndex={start}
               />
-            ),
-          )}
+            );
+          })}
         </section>
 
-        {/* Entrance effects — East Wing */}
-        <section id="entrance" className="mb-28">
-          <div className="mb-10 flex items-baseline justify-between">
-            <div>
-              <p className="mb-2 text-xs uppercase tracking-[0.2em] text-starry-cyan/50">
-                East Wing
-              </p>
-              <h2
-                className="text-3xl font-bold sm:text-4xl"
-                style={{ fontFamily: "var(--font-heading), serif" }}
+        {/* ================================================================
+            EAST WING — Cinematic Animations (Entrance)
+            ================================================================ */}
+        <section id="east-wing" className="mb-28">
+          {/* Wing header */}
+          <div className="mb-12">
+            <div className="mb-4 flex items-center gap-4">
+              <span
+                className="font-mono text-[10px] font-medium uppercase tracking-[0.3em]"
+                style={{ color: "oklch(0.70 0.14 220 / 50%)" }}
               >
-                Cinematic Animations
-              </h2>
+                East Wing
+              </span>
+              <div className="brushstroke-divider flex-1" />
             </div>
-            <span className="text-sm text-muted-foreground">
-              {ENTRANCE_EFFECTS.length} works on display
-            </span>
+
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <div>
+                <h2
+                  className="text-3xl font-bold sm:text-4xl"
+                  style={{
+                    fontFamily: "var(--font-heading), serif",
+                    color: "oklch(0.92 0.015 85)",
+                  }}
+                >
+                  Cinematic Animations
+                </h2>
+                <p
+                  className="mt-1.5 max-w-lg text-xs leading-relaxed"
+                  style={{ color: "oklch(0.55 0.03 260 / 80%)" }}
+                >
+                  Watch particles assemble into text through carefully choreographed
+                    entrance animations. Each transition tells a story.
+                </p>
+              </div>
+              <span className="gold-pill text-[9px]">
+                {ENTRANCE_EFFECTS.length} works
+              </span>
+            </div>
           </div>
-          {(
-            Object.keys(ENTRANCE_CATEGORIES) as Array<
-              keyof typeof ENTRANCE_CATEGORIES
-            >
-          ).map((cat) => (
-            <CategorySection
-              key={cat}
-              title={ENTRANCE_CATEGORIES[cat]}
-              effects={entranceGrouped[cat] ?? []}
-            />
-          ))}
+
+          {/* Category groups */}
+          {entranceCategories.map((cat) => {
+            const effects = entranceGrouped[cat] ?? [];
+            const start = cardIndex;
+            cardIndex += effects.length;
+            return (
+              <CategorySection
+                key={cat}
+                title={ENTRANCE_CATEGORIES[cat]}
+                effects={effects}
+                startIndex={start}
+              />
+            );
+          })}
         </section>
 
-        {/* Footer — museum plaque */}
-        <footer className="border-t border-gold/10 pt-10 text-center">
-          <div className="mx-auto mb-4 h-px w-24 bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
-          <p className="text-xs text-muted-foreground">
-            {ALL_EFFECTS.length} works in the collection ·{" "}
-            <span className="text-gold">
+        {/* ================================================================
+            FOOTER — Museum Plaque
+            ================================================================ */}
+        <footer className="plaque-gold mx-auto max-w-lg rounded-lg px-8 py-6 text-center">
+          <div className="mx-auto mb-3 w-16 brushstroke-divider" />
+          <p
+            className="text-sm"
+            style={{
+              fontFamily: "var(--font-heading), serif",
+              color: "oklch(0.92 0.015 85)",
+            }}
+          >
+            {ALL_EFFECTS.length} works in the collection
+          </p>
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-gold/50">
+            <span className="text-gold/70">
               {HOVER_EFFECTS.filter((e) => e.implemented).length} live exhibits
             </span>
+            <span className="mx-2 text-muted-foreground/30">·</span>
+            {ENTRANCE_EFFECTS.filter((e) => e.implemented).length} cinematic
           </p>
-          <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50">
+          <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/30">
             Curated with GLSL · Powered by Three.js
           </p>
+          <div className="mx-auto mt-3 w-16 brushstroke-divider" />
         </footer>
       </div>
     </main>

@@ -36,7 +36,7 @@ export type EffectSlug = keyof typeof EFFECT_IDS;
 
 /** Vertex shader — shared preamble + effect dispatch. */
 export const VERTEX_SHADER = /* glsl */ `
-  attribute vec3 position;     // home (rest) position from text sampler (standard three.js attr)
+  // position is provided by Three.js via geometry.setAttribute("position", …)
   attribute float aSize;       // per-particle base size
   attribute float aRandom;     // per-particle random 0..1 (stable)
 
