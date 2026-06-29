@@ -78,6 +78,19 @@ export default function HomePage() {
       <div className="relative mx-auto max-w-7xl px-6 py-16 sm:py-20">
         {/* ---- Hero / Museum Entrance ---- */}
         <section className="mb-12 text-center sm:mb-16">
+          {/* Logo mark */}
+          <div className="mx-auto mb-6 flex items-center justify-center gap-3">
+            <svg width="40" height="40" viewBox="0 0 28 28" fill="none" className="text-gold">
+              <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="1" opacity="0.3" />
+              <circle cx="14" cy="14" r="7" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+              <circle cx="14" cy="14" r="2.5" fill="currentColor" />
+              <circle cx="14" cy="2" r="1" fill="currentColor" opacity="0.6" />
+              <circle cx="26" cy="14" r="1" fill="currentColor" opacity="0.6" />
+              <circle cx="14" cy="26" r="1" fill="currentColor" opacity="0.6" />
+              <circle cx="2" cy="14" r="1" fill="currentColor" opacity="0.6" />
+            </svg>
+          </div>
+
           <p
             className="mb-4 font-mono text-[10px] uppercase tracking-[0.35em]"
             style={{ color: "oklch(0.82 0.16 85 / 55%)" }}
@@ -266,8 +279,31 @@ export default function HomePage() {
         {/* ================================================================
             FOOTER — Museum Plaque
             ================================================================ */}
-        <footer className="plaque-gold mx-auto max-w-lg rounded-lg px-8 py-6 text-center">
-          <div className="mx-auto mb-3 w-16 brushstroke-divider" />
+        <footer className="mx-auto mt-8 max-w-2xl rounded-lg plaque-gold px-8 py-8 text-center">
+          {/* Logo mark */}
+          <div className="mx-auto mb-4 flex items-center justify-center gap-2.5">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" className="text-gold">
+              <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="1" opacity="0.3" />
+              <circle cx="14" cy="14" r="7" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+              <circle cx="14" cy="14" r="2.5" fill="currentColor" />
+              <circle cx="14" cy="2" r="1" fill="currentColor" opacity="0.6" />
+              <circle cx="26" cy="14" r="1" fill="currentColor" opacity="0.6" />
+              <circle cx="14" cy="26" r="1" fill="currentColor" opacity="0.6" />
+              <circle cx="2" cy="14" r="1" fill="currentColor" opacity="0.6" />
+            </svg>
+            <span
+              className="text-lg font-bold tracking-tight"
+              style={{
+                fontFamily: "var(--font-heading), serif",
+                color: "oklch(0.92 0.015 85)",
+              }}
+            >
+              UI Lab
+            </span>
+          </div>
+
+          <div className="mx-auto mb-4 w-16 brushstroke-divider" />
+
           <p
             className="text-sm"
             style={{
@@ -284,10 +320,18 @@ export default function HomePage() {
             <span className="mx-2 text-muted-foreground/30">·</span>
             {ENTRANCE_EFFECTS.filter((e) => e.implemented).length} cinematic
           </p>
-          <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/30">
-            Curated with GLSL · Powered by Three.js
-          </p>
-          <div className="mx-auto mt-3 w-16 brushstroke-divider" />
+
+          <div className="mx-auto my-4 w-16 brushstroke-divider" />
+
+          <div className="flex flex-wrap items-center justify-center gap-4 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/40">
+            <a href="https://github.com/JoeJoeflyn/ui-lab" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold/60">
+              GitHub
+            </a>
+            <span className="text-muted-foreground/20">·</span>
+            <span>GLSL · Three.js · Next.js</span>
+            <span className="text-muted-foreground/20">·</span>
+            <span>Open Source</span>
+          </div>
         </footer>
       </div>
     </main>

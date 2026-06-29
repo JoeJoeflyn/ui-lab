@@ -18,7 +18,7 @@ const DISPLAY_IDS = ARTWORKS.map((a) => a.id);
 
 export function ArtworkExhibit() {
   return (
-    <section className="mb-28">
+    <section className="mb-16">
       {/* Section header */}
       <div className="mb-12">
         <div className="mb-4 flex items-center gap-4">
@@ -121,7 +121,7 @@ function ArtworkCard({
             <img
               src={artwork.imageUrl}
               alt={`${artwork.title} by ${artwork.artist}`}
-              className="h-full w-full object-cover opacity-60 transition-opacity duration-500 group-hover:opacity-0"
+              className="max-h-full max-w-full object-contain opacity-70 transition-opacity duration-500 group-hover:opacity-0"
               loading="lazy"
             />
           </div>
