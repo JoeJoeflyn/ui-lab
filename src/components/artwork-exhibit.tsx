@@ -14,14 +14,7 @@ import { ParticlePainting } from "@/components/particle-painting";
 
 const LOOKUP = new Map(ARTWORKS.map((a) => [a.id, a]));
 
-const DISPLAY_IDS = [
-  "starry-night",
-  "creation-of-adam",
-  "the-great-wave",
-  "mona-lisa",
-  "birth-of-venus",
-  "girl-with-a-pearl-earring",
-];
+const DISPLAY_IDS = ARTWORKS.map((a) => a.id);
 
 export function ArtworkExhibit() {
   return (
