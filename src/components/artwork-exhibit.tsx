@@ -68,6 +68,7 @@ function ArtworkCard({
 }) {
   const [visible, setVisible] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -108,12 +109,17 @@ function ArtworkCard({
             scatterStrength={4}
           />
         ) : (
-          <div className="flex h-full items-center justify-center">
+          <div className="relative flex h-full items-center justify-center">
+            {/* Skeleton shimmer while image loads */}
+            {!imgLoaded && (
+              <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/20 to-muted/5" />
+            )}
             <img
               src={artwork.imageUrl}
               alt={`${artwork.title} by ${artwork.artist}`}
-              className="max-h-full max-w-full object-contain opacity-70 transition-opacity duration-500 group-hover:opacity-0"
+              className={`max-h-full max-w-full object-contain transition-opacity duration-500 group-hover:opacity-0 ${imgLoaded ? "opacity-70" : "opacity-0"}`}
               loading="lazy"
+              onLoad={() => setImgLoaded(true)}
             />
           </div>
         )}
