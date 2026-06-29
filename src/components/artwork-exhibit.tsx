@@ -82,7 +82,6 @@ function ArtworkCard({
   artwork: (typeof ARTWORKS)[number];
   index?: number;
 }) {
-  const [hovered, setHovered] = useState(false);
   const [visible, setVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -108,54 +107,28 @@ function ArtworkCard({
     <div
       ref={cardRef}
       className={`group painting-frame ${visible ? "reveal visible" : `reveal ${delayClass}`}`}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       {/* Glow */}
       <div className="painting-glow" />
 
-      {/* Canvas area — image cross-fades to particles on hover */}
+      {/* Canvas area — image rendered as particles */}
       <div className="relative h-56 overflow-hidden sm:h-64" style={{ zIndex: 2, background: "oklch(0.06 0.03 260)" }}>
-        {/* Base image — fades out on hover */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={artwork.imageUrl}
-          alt={artwork.title}
-          className="absolute inset-0 h-full w-full object-contain transition-all duration-700"
-          style={{
-            opacity: hovered ? 0 : 1,
-            transform: hovered ? "scale(1.05)" : "scale(1)",
-          }}
-          loading="lazy"
+        <ParticlePainting
+          artwork={artwork}
+          className="h-full w-full"
+          particleCount={10000}
+          cursorRadius={120}
+          scatterStrength={18}
         />
-        {/* Particle painting — fades in on hover */}
-        <div
-          className="absolute inset-0 transition-opacity duration-500"
-          style={{ opacity: hovered ? 1 : 0 }}
-        >
-          <ParticlePainting
-            artwork={artwork}
-            className="h-full w-full"
-            particleCount={8000}
-            cursorRadius={hovered ? 120 : 0}
-            scatterStrength={hovered ? 18 : 0}
-          />
-        </div>
-        {/* Hint badge */}
-        {!hovered && (
-          <div className="pointer-events-none absolute bottom-2 right-2">
-            <span className="gold-pill text-[8px]">hover to scatter</span>
-          </div>
-        )}
       </div>
 
       {/* Plaque */}
       <div className="relative border-t border-gold/10 px-4 py-3" style={{ zIndex: 2 }}>
         <h3
-          className="truncate text-sm font-semibold transition-colors duration-300"
+          className="truncate text-sm font-semibold"
           style={{
             fontFamily: "var(--font-heading), serif",
-            color: hovered ? "oklch(0.82 0.16 85)" : "oklch(0.92 0.015 85)",
+            color: "oklch(0.92 0.015 85)",
           }}
         >
           {artwork.title}
