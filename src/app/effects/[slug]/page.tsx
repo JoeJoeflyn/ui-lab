@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ALL_EFFECTS, getEffectBySlug } from "@/lib/effects";
+import { EffectPreview } from "@/components/effect-preview";
 
 export function generateStaticParams() {
   return ALL_EFFECTS.map((e) => ({ slug: e.slug }));
@@ -76,16 +77,12 @@ async function EffectPageInner({
           </div>
         </div>
 
-        {/* Live preview placeholder */}
+        {/* Live preview */}
         <section className="mb-10">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Live preview
+            Live preview {effect.implemented ? "" : "· not yet implemented"}
           </h2>
-          <div className="flex h-64 items-center justify-center rounded-lg border border-border bg-card">
-            <p className="text-sm text-muted-foreground">
-              Particle canvas mounts here — implementation pending.
-            </p>
-          </div>
+          <EffectPreview effect={effect} />
         </section>
 
         {/* Technique */}

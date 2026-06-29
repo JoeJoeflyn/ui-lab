@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ALL_EFFECTS,
   ENTRANCE_EFFECTS,
@@ -8,30 +7,7 @@ import {
   groupByCategory,
   type Effect,
 } from "@/lib/effects";
-
-function EffectCard({ effect }: { effect: Effect }) {
-  return (
-    <Link
-      href={`/effects/${effect.slug}`}
-      className="group block rounded-lg border border-border bg-card p-4 transition-colors hover:border-accent-foreground/40 hover:bg-muted/40"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-semibold text-card-foreground group-hover:text-accent-foreground">
-          {effect.name}
-        </h3>
-        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-          {effect.specRef}
-        </span>
-      </div>
-      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-        {effect.feel}
-      </p>
-      <p className="mt-2 font-mono text-[10px] text-muted-foreground/70">
-        {effect.technique}
-      </p>
-    </Link>
-  );
-}
+import { EffectHero, EffectMiniCard } from "@/components/effect-cards";
 
 function CategorySection({
   title,
@@ -49,7 +25,7 @@ function CategorySection({
       </h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {effects.map((e) => (
-          <EffectCard key={e.slug} effect={e} />
+          <EffectMiniCard key={e.slug} effect={e} />
         ))}
       </div>
     </section>
@@ -74,8 +50,8 @@ export default function HomePage() {
       />
 
       <div className="relative mx-auto max-w-7xl px-6 py-16">
-        {/* Hero */}
-        <section className="mb-20 text-center">
+        {/* Hero text */}
+        <section className="mb-12 text-center">
           <h1
             className="text-4xl font-black tracking-tight sm:text-6xl"
             style={{ fontFamily: "var(--font-heading), sans-serif" }}
@@ -91,27 +67,10 @@ export default function HomePage() {
             </span>{" "}
             animations — each with a live preview and copy-paste code.
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3 text-xs">
-            <a
-              href="#hover"
-              className="rounded-full border border-border bg-card px-4 py-2 text-card-foreground transition-colors hover:border-accent-foreground/40"
-            >
-              Hover effects
-            </a>
-            <a
-              href="#entrance"
-              className="rounded-full border border-border bg-card px-4 py-2 text-card-foreground transition-colors hover:border-accent-foreground/40"
-            >
-              Entrance animations
-            </a>
-            <a
-              href="/PARTICLE_EFFECTS.md"
-              className="rounded-full border border-border bg-card px-4 py-2 text-card-foreground transition-colors hover:border-accent-foreground/40"
-            >
-              Design spec
-            </a>
-          </div>
         </section>
+
+        {/* Live hero canvas */}
+        <EffectHero effects={HOVER_EFFECTS} />
 
         {/* Hover effects */}
         <section id="hover" className="mb-24">
@@ -166,13 +125,7 @@ export default function HomePage() {
         {/* Footer */}
         <footer className="border-t border-border pt-8 text-center text-xs text-muted-foreground">
           <p>
-            {ALL_EFFECTS.length} effects total · Spec at{" "}
-            <Link
-              href="/PARTICLE_EFFECTS.md"
-              className="text-accent-foreground hover:underline"
-            >
-              PARTICLE_EFFECTS.md
-            </Link>
+            {ALL_EFFECTS.length} effects total · {HOVER_EFFECTS.filter((e) => e.implemented).length} live demos
           </p>
         </footer>
       </div>
