@@ -185,8 +185,6 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
  */
 export function EffectHero({ effects }: { effects: Effect[] }) {
   const implemented = effects.filter((e) => e.implemented);
-  // Cap dots to 12 — cycle through the full set with index math
-  const DOT_COUNT = Math.min(12, implemented.length);
   const [idx, setIdx] = useState(0);
   const current = implemented[idx] ?? implemented[0];
 
@@ -247,43 +245,28 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
           </div>
         </div>
 
-        {/* Dot navigation — bottom-right */}
-        <div className="pointer-events-auto absolute bottom-5 right-5 z-10 flex items-center gap-3">
-          {/* Prev arrow */}
+        {/* Navigation — bottom-right */}
+        <div className="pointer-events-auto absolute bottom-5 right-5 z-10 flex items-center gap-2">
           <button
             onClick={prev}
-            className="flex h-6 w-6 items-center justify-center rounded-full text-gold/40 transition-colors hover:text-gold/80"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-gold/15 text-gold/50 transition-all hover:border-gold/40 hover:text-gold"
             aria-label="Previous exhibit"
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <svg width="12" height="12" viewBox="0 0 10 10" fill="none">
               <path d="M7 1L3 5L7 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
 
-          {/* Dots — capped at 12, map to evenly spaced indices */}
-          {Array.from({ length: DOT_COUNT }, (_, dotIdx) => {
-            const effectIdx = Math.round((dotIdx / DOT_COUNT) * implemented.length) % implemented.length;
-            return (
-              <button
-                key={dotIdx}
-                onClick={() => setIdx(effectIdx)}
-                className={`rounded-full transition-all duration-300 ${
-                  effectIdx === idx
-                    ? "bg-gold w-3 h-3 shadow-[0_0_8px_oklch(0.82_0.16_85/0.4)]"
-                    : "bg-gold/20 hover:bg-gold/40 w-2 h-2"
-                }`}
-                aria-label={`Show ${implemented[effectIdx]?.name}`}
-              />
-            );
-          })}
+          <span className="px-2 font-mono text-[10px] tabular-nums text-gold/60">
+            {idx + 1} / {implemented.length}
+          </span>
 
-          {/* Next arrow */}
           <button
             onClick={next}
-            className="flex h-6 w-6 items-center justify-center rounded-full text-gold/40 transition-colors hover:text-gold/80"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-gold/15 text-gold/50 transition-all hover:border-gold/40 hover:text-gold"
             aria-label="Next exhibit"
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <svg width="12" height="12" viewBox="0 0 10 10" fill="none">
               <path d="M3 1L7 5L3 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -301,8 +284,7 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
 
       {/* Interaction hint */}
       <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/40">
-        Move cursor across canvas · Navigate with dots ·{" "}
-        <span className="text-gold/50">{idx + 1} / {implemented.length}</span>
+        Move cursor across canvas · Use arrows to browse exhibits
       </p>
     </section>
   );
