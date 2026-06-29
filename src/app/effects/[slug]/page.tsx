@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ALL_EFFECTS, getEffectBySlug } from "@/lib/effects";
 import { EffectPreview } from "@/components/effect-preview";
+import { CodeBlock } from "@/components/code-block";
 
 export function generateStaticParams() {
   return ALL_EFFECTS.map((e) => ({ slug: e.slug }));
@@ -35,6 +36,36 @@ async function EffectPageInner({
   cursorRadius={120}
   falloff="gaussian"
 />`;
+
+  const installCode = `# Install
+pnpm add three
+
+# Copy these files to your project:
+#   src/lib/particle-sampler.ts
+#   src/lib/glsl-effects.ts
+#   src/components/particle-text.tsx
+
+# Then import and use:
+import { ParticleText } from "@/components/particle-text";`;
+
+  const usageCode = `"use client";
+import { ParticleText } from "@/components/particle-text";
+
+export function MyComponent() {
+  return (
+    <div className="h-64 w-full">
+      <ParticleText
+        text="Hello World"
+        hoverMode="${effect.kind === "hover" ? effect.slug : "dissolve"}"
+        particleCount={8000}
+        cursorRadius={120}
+        color={[0.6, 0.75, 0.9]}
+        glowColor={[0.95, 0.75, 0.3]}
+        opacity={0.9}
+      />
+    </div>
+  );
+}`;
 
   return (
     <main className="relative min-h-screen brushstroke-bg">
@@ -117,9 +148,27 @@ async function EffectPageInner({
             </h2>
             <div className="brushstroke-divider flex-1" />
           </div>
-          <pre className="overflow-x-auto rounded-lg border border-gold/10 bg-card p-5 font-mono text-xs text-card-foreground/80">
-            <code>{codeExample}</code>
-          </pre>
+          <CodeBlock code={codeExample} language="tsx" />
+        </section>
+
+        {/* How to use — installation + usage */}
+        <section className="mb-12">
+          <div className="mb-4 flex items-center gap-4">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/60">
+              How to Use
+            </h2>
+            <div className="brushstroke-divider flex-1" />
+          </div>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground/60">1. Install dependencies</p>
+              <CodeBlock code={installCode} language="bash" />
+            </div>
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground/60">2. Use in your component</p>
+              <CodeBlock code={usageCode} language="tsx" />
+            </div>
+          </div>
         </section>
 
         {/* Neighbors — more in the collection */}
