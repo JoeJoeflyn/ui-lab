@@ -31,12 +31,12 @@ Progress: [█░░░░░░░░░] 15%
 
 | Plan | Category | Effects | Status |
 |------|----------|---------|--------|
-| 01-01 | Scatter | ripple, shatter, confetti, spiralout, wind | pending |
-| 01-02 | Attract | spiral, drain, assemble, magnetize | pending |
-| 01-03 | Wave | pulse, echo, bounce, lightning | pending |
-| 01-04 | Transform | shake, inflate, gravity, liquid, bokeh, stretch, breathing, morph, parallax, twist, flatten, pinch, slice | pending |
-| 01-05 | Ambient | tornado, matrix, constellation, lens, orbit, quantum, static, sand, bubbles, comet, ink | pending |
-| 01-06 | Visual | vanish, hueshift, cloak, mirror, scaleup | pending |
+| 01-01 | Scatter | ripple, shatter, confetti, spiralout, wind | done |
+| 01-02 | Attract | spiral, drain, assemble, magnetize | done |
+| 01-03 | Wave | pulse, echo, bounce, lightning | done |
+| 01-04 | Transform | shake, inflate, gravity, liquid, bokeh, stretch, breathing, morph, parallax, twist, flatten, pinch, slice | done |
+| 01-05 | Ambient | tornado, matrix, constellation, lens, orbit, quantum, static, sand, bubbles, comet, ink | done |
+| 01-06 | Visual | vanish, hueshift, cloak, mirror, scaleup | done |
 
 ## Notes
 
