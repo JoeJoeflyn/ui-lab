@@ -22,10 +22,7 @@ export function ArtworkExhibit() {
       {/* Section header */}
       <div className="mb-12">
         <div className="mb-4 flex items-center gap-4">
-          <span
-            className="font-mono text-[10px] font-medium uppercase tracking-[0.3em]"
-            style={{ color: "oklch(0.82 0.16 85 / 40%)" }}
-          >
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-gold/40">
             Salon
           </span>
           <div className="brushstroke-divider flex-1" />
@@ -33,18 +30,12 @@ export function ArtworkExhibit() {
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <h2
-              className="text-3xl font-bold sm:text-4xl"
-              style={{
-                fontFamily: "var(--font-heading), serif",
-                color: "oklch(0.92 0.015 85)",
-              }}
+              className="text-3xl font-bold text-card-foreground sm:text-4xl"
+              style={{ fontFamily: "var(--font-heading), serif" }}
             >
               Particle Paintings
             </h2>
-            <p
-              className="mt-1.5 max-w-lg text-xs leading-relaxed"
-              style={{ color: "oklch(0.55 0.03 260 / 80%)" }}
-            >
+            <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-muted-foreground/80">
               Masterworks rendered as thousands of GPU particles.
               Hover to scatter — watch them reform into the painting.
             </p>
@@ -131,11 +122,8 @@ function ArtworkCard({
       {/* Plaque */}
       <div className="relative border-t border-gold/10 px-4 py-3" style={{ zIndex: 2 }}>
         <h3
-          className="truncate text-sm font-semibold"
-          style={{
-            fontFamily: "var(--font-heading), serif",
-            color: "oklch(0.92 0.015 85)",
-          }}
+          className="truncate text-sm font-semibold text-card-foreground"
+          style={{ fontFamily: "var(--font-heading), serif" }}
         >
           {artwork.title}
         </h3>

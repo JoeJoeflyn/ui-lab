@@ -25,14 +25,8 @@ function CategorySection({
     <div className="mb-10 last:mb-0">
       {/* Category header — small gold label + count + brushstroke divider */}
       <div className="mb-5 flex items-center gap-3">
-        <span
-          className="inline-block h-px w-5"
-          style={{ background: "oklch(0.82 0.16 85 / 40%)" }}
-        />
-        <h3
-          className="font-mono text-[10px] font-medium uppercase tracking-[0.2em]"
-          style={{ color: "oklch(0.82 0.16 85 / 65%)" }}
-        >
+        <span className="inline-block h-px w-5 bg-gold/40" />
+        <h3 className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-gold/65">
           {title}
         </h3>
         <span className="gold-pill text-[8px]">{effects.length} works</span>
@@ -91,10 +85,7 @@ export default function HomePage() {
             </svg>
           </div>
 
-          <p
-            className="mb-4 font-mono text-[10px] uppercase tracking-[0.35em]"
-            style={{ color: "oklch(0.82 0.16 85 / 55%)" }}
-          >
+          <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.35em] text-gold/55">
             Gallery of GPU Shader Art
           </p>
 
@@ -107,16 +98,13 @@ export default function HomePage() {
 
           <div className="mx-auto mt-6 mb-6 h-px w-28 brushstroke-divider" />
 
-          <p
-            className="mx-auto max-w-2xl text-sm leading-relaxed sm:text-base"
-            style={{ color: "oklch(0.65 0.03 260)" }}
-          >
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             An exhibition of{" "}
-            <span style={{ color: "oklch(0.82 0.16 85)" }}>
+            <span className="text-gold">
               {HOVER_EFFECTS.length} interactive
             </span>{" "}
             and{" "}
-            <span style={{ color: "oklch(0.70 0.14 220)" }}>
+            <span className="text-starry-cyan">
               {ENTRANCE_EFFECTS.length} cinematic
             </span>{" "}
             particle text effects — each rendered in real-time with GLSL shaders.
@@ -131,24 +119,21 @@ export default function HomePage() {
         <nav className="mb-20 flex flex-wrap justify-center gap-5">
           <a
             href="#west-wing"
-            className="plaque-gold group rounded-full px-5 py-2 text-xs transition-all duration-300 hover:px-6"
-            style={{ color: "oklch(0.82 0.16 85 / 75%)" }}
+            className="plaque-gold group rounded-full px-5 py-2 text-xs text-gold/75 transition-all duration-300 hover:px-6"
           >
             <span className="mr-1.5 font-mono text-[9px] text-gold/40">01</span>
             Interactive Gallery
           </a>
           <a
             href="#east-wing"
-            className="plaque-gold group rounded-full px-5 py-2 text-xs transition-all duration-300 hover:px-6"
-            style={{ color: "oklch(0.82 0.16 85 / 75%)" }}
+            className="plaque-gold group rounded-full px-5 py-2 text-xs text-gold/75 transition-all duration-300 hover:px-6"
           >
             <span className="mr-1.5 font-mono text-[9px] text-gold/40">02</span>
             Cinematic Collection
           </a>
           <a
             href="#salon"
-            className="plaque-gold group rounded-full px-5 py-2 text-xs transition-all duration-300 hover:px-6"
-            style={{ color: "oklch(0.82 0.16 85 / 75%)" }}
+            className="plaque-gold group rounded-full px-5 py-2 text-xs text-gold/75 transition-all duration-300 hover:px-6"
           >
             <span className="mr-1.5 font-mono text-[9px] text-gold/40">03</span>
             Particle Paintings
@@ -162,10 +147,7 @@ export default function HomePage() {
           {/* Wing header */}
           <div className="mb-12">
             <div className="mb-4 flex items-center gap-4">
-              <span
-                className="font-mono text-[10px] font-medium uppercase tracking-[0.3em]"
-                style={{ color: "oklch(0.82 0.16 85 / 40%)" }}
-              >
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-gold/40">
                 West Wing
               </span>
               <div className="brushstroke-divider flex-1" />
@@ -174,18 +156,12 @@ export default function HomePage() {
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <div>
                 <h2
-                  className="text-3xl font-bold sm:text-4xl"
-                  style={{
-                    fontFamily: "var(--font-heading), serif",
-                    color: "oklch(0.92 0.015 85)",
-                  }}
+                  className="text-3xl font-bold text-card-foreground sm:text-4xl"
+                  style={{ fontFamily: "var(--font-heading), serif" }}
                 >
                   Interactive Effects
                 </h2>
-                <p
-                  className="mt-1.5 max-w-lg text-xs leading-relaxed"
-                  style={{ color: "oklch(0.55 0.03 260 / 80%)" }}
-                >
+                <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-muted-foreground/80">
                   Move your cursor over each painting to reveal the particle effect.
                   Each piece responds to your touch like a living canvas.
                 </p>
@@ -219,10 +195,7 @@ export default function HomePage() {
           {/* Wing header */}
           <div className="mb-12">
             <div className="mb-4 flex items-center gap-4">
-              <span
-                className="font-mono text-[10px] font-medium uppercase tracking-[0.3em]"
-                style={{ color: "oklch(0.70 0.14 220 / 50%)" }}
-              >
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-starry-cyan/50">
                 East Wing
               </span>
               <div className="brushstroke-divider flex-1" />
@@ -231,18 +204,12 @@ export default function HomePage() {
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <div>
                 <h2
-                  className="text-3xl font-bold sm:text-4xl"
-                  style={{
-                    fontFamily: "var(--font-heading), serif",
-                    color: "oklch(0.92 0.015 85)",
-                  }}
+                  className="text-3xl font-bold text-card-foreground sm:text-4xl"
+                  style={{ fontFamily: "var(--font-heading), serif" }}
                 >
                   Cinematic Animations
                 </h2>
-                <p
-                  className="mt-1.5 max-w-lg text-xs leading-relaxed"
-                  style={{ color: "oklch(0.55 0.03 260 / 80%)" }}
-                >
+                <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-muted-foreground/80">
                   Watch particles assemble into text through carefully choreographed
                     entrance animations. Each transition tells a story.
                 </p>
@@ -292,11 +259,8 @@ export default function HomePage() {
               <circle cx="2" cy="14" r="1" fill="currentColor" opacity="0.6" />
             </svg>
             <span
-              className="text-lg font-bold tracking-tight"
-              style={{
-                fontFamily: "var(--font-heading), serif",
-                color: "oklch(0.92 0.015 85)",
-              }}
+              className="text-lg font-bold tracking-tight text-card-foreground"
+              style={{ fontFamily: "var(--font-heading), serif" }}
             >
               UI Lab
             </span>
@@ -305,11 +269,8 @@ export default function HomePage() {
           <div className="mx-auto mb-4 w-16 brushstroke-divider" />
 
           <p
-            className="text-sm"
-            style={{
-              fontFamily: "var(--font-heading), serif",
-              color: "oklch(0.92 0.015 85)",
-            }}
+            className="text-sm text-card-foreground"
+            style={{ fontFamily: "var(--font-heading), serif" }}
           >
             {ALL_EFFECTS.length} works in the collection
           </p>

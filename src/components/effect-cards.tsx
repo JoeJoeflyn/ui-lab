@@ -19,10 +19,14 @@ import type { Effect } from "@/lib/effects";
  *   └──────────────────────────┘
  */
 export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: number }) {
+  const isEntrance = effect.kind === "entrance";
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
   const cardRef = useRef<HTMLAnchorElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [inView, setInView] = useState(false);
+  // Entrance cards auto-play when in view; hover cards need hover
+  const shouldRender = isEntrance ? inView : hovered;
 
   useEffect(() => {
     const el = cardRef.current;
@@ -31,9 +35,13 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          // Small staggered delay based on index
-          setTimeout(() => setVisible(true), (index % 8) * 40);
-          observer.disconnect();
+          if (!revealed) {
+            setTimeout(() => setRevealed(true), (index % 8) * 40);
+          }
+          setInView(true);
+        } else {
+          // Unmount WebGL when scrolled away (bounds context count)
+          setInView(false);
         }
       },
       { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
@@ -41,7 +49,7 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [index]);
+  }, [index, revealed]);
 
   const delayClass = `reveal-delay-${(index % 6) + 1}`;
 
@@ -49,7 +57,6 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const isEntrance = effect.kind === "entrance";
       const code = `<ParticleText
   text="Your Text"
   hoverMode="${isEntrance ? "dissolve" : effect.slug}"${isEntrance ? `\n  entranceMode="${effect.slug}"` : ""}
@@ -64,14 +71,14 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
         setTimeout(() => setCopied(false), 2000);
       });
     },
-    [effect.slug, effect.kind],
+    [effect.slug, isEntrance],
   );
 
   return (
     <Link
       ref={cardRef}
       href={`/effects/${effect.slug}`}
-      className={`group painting-frame block cursor-pointer ${visible ? "reveal visible" : `reveal ${delayClass}`}`}
+      className={`group painting-frame block cursor-pointer ${revealed ? "reveal visible" : `reveal ${delayClass}`}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -89,12 +96,12 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
         />
 
         {effect.implemented ? (
-          hovered ? (
+          shouldRender ? (
             <ParticleText
               text={effect.name}
-              hoverMode={(effect.kind === "entrance" ? "dissolve" : effect.slug) as never}
-              entranceMode={effect.kind === "entrance" ? (effect.slug as never) : undefined}
-              entranceLoop={effect.kind === "entrance"}
+              hoverMode={(isEntrance ? "dissolve" : effect.slug) as never}
+              entranceMode={isEntrance ? (effect.slug as never) : undefined}
+              entranceLoop={isEntrance}
               compact
               particleCount={2500}
               cursorRadius={80}
@@ -104,12 +111,8 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
             />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <span
-                className="select-none text-xl font-bold tracking-wide transition-colors duration-300"
-                style={{
-                  fontFamily: "var(--font-heading), serif",
-                  color: "oklch(0.55 0.03 260 / 0.35)",
-                }}
+              <span className="select-none text-xl font-bold tracking-wide text-muted-foreground/30 transition-colors duration-300 group-hover:text-muted-foreground/50"
+                style={{ fontFamily: "var(--font-heading), serif" }}
               >
                 {effect.name}
               </span>
@@ -118,11 +121,8 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
         ) : (
           <div className="flex h-full items-center justify-center">
             <span
-              className="select-none text-2xl font-bold tracking-wide"
-              style={{
-                fontFamily: "var(--font-heading), serif",
-                color: oklch(0.55, 0.03, 260, 0.25),
-              }}
+              className="select-none text-2xl font-bold tracking-wide text-muted-foreground/20"
+              style={{ fontFamily: "var(--font-heading), serif" }}
             >
               {effect.name}
             </span>
@@ -148,19 +148,15 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
       <div className="relative border-t border-gold/10 px-4 py-3" style={{ zIndex: 2 }}>
         <div className="flex items-start justify-between gap-2">
           <h3
-            className="text-sm font-semibold transition-colors duration-300"
-            style={{
-              fontFamily: "var(--font-heading), serif",
-              color: hovered ? "oklch(0.82 0.16 85)" : "oklch(0.92 0.015 85)",
-            }}
+            className={`text-sm font-semibold transition-colors duration-300 ${hovered ? "text-gold" : "text-card-foreground"}`}
+            style={{ fontFamily: "var(--font-heading), serif" }}
           >
             {effect.name}
           </h3>
           {effect.implemented && (
             <button
               onClick={handleCopy}
-              className="flex flex-shrink-0 items-center gap-1 rounded-md border border-gold/15 px-2 py-1 font-mono text-[9px] uppercase tracking-wider transition-all duration-200 hover:border-gold/40"
-              style={{ color: copied ? "oklch(0.82 0.16 85)" : "oklch(0.82 0.16 85 / 50%)" }}
+              className={`flex flex-shrink-0 items-center gap-1 rounded-md border border-gold/15 px-2 py-1 font-mono text-[9px] uppercase tracking-wider transition-all duration-200 hover:border-gold/40 ${copied ? "text-gold" : "text-gold/50"}`}
               aria-label="Copy component code"
             >
               {copied ? "Copied!" : "Copy"}
@@ -178,11 +174,6 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
       </div>
     </Link>
   );
-}
-
-// oklch CSS string builder for inline styles
-function oklch(l: number, c: number, h: number, a = 1) {
-  return `oklch(${l} ${c} ${h} / ${a})`;
 }
 
 /**
@@ -212,7 +203,7 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
         {/* Hero spotlight — stronger radial glow */}
         <div className="painting-glow !opacity-100"
           style={{
-            background: `radial-gradient(ellipse 70% 50% at 50% 0%, ${oklch(0.82, 0.16, 85, 0.08)}, transparent 70%)`,
+            background: `radial-gradient(ellipse 70% 50% at 50% 0%, oklch(0.82 0.16 85 / 0.08), transparent 70%)`,
           }}
         />
 
@@ -235,10 +226,7 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
         </div>
 
         {/* Museum placard — bottom-left */}
-        <div
-          className="pointer-events-none absolute bottom-5 left-5 z-10"
-          style={{ zIndex: 5 }}
-        >
+        <div className="pointer-events-none absolute bottom-5 left-5 z-10">
           <div className="plaque-gold rounded px-4 py-2.5">
             <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-gold/50">
               Featured Exhibit
@@ -256,10 +244,7 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
         </div>
 
         {/* Dot navigation — bottom-right */}
-        <div
-          className="pointer-events-auto absolute bottom-5 right-5 z-10 flex items-center gap-3"
-          style={{ zIndex: 5 }}
-        >
+        <div className="pointer-events-auto absolute bottom-5 right-5 z-10 flex items-center gap-3">
           {/* Prev arrow */}
           <button
             onClick={prev}
