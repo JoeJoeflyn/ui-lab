@@ -20,7 +20,8 @@ export type EffectCategory =
   | "special";
 
 /** Slugs that have working GLSL implementations (see glsl-effects.ts). */
-export const IMPLEMENTED_EFFECTS = new Set([
+export const IMPLEMENTED_EFFECTS = new Set<string>([
+  // Baseline hover effects
   "dissolve",
   "explode",
   "vortex",
@@ -29,6 +30,54 @@ export const IMPLEMENTED_EFFECTS = new Set([
   "glitch",
   "blackhole",
   "ember",
+  // Scatter family
+  "ripple",
+  "shatter",
+  "confetti",
+  "spiralout",
+  "wind",
+  // Attract family
+  "spiral",
+  "drain",
+  "assemble",
+  "magnetize",
+  // Wave family
+  "pulse",
+  "echo",
+  "bounce",
+  "lightning",
+  // Transform family
+  "shake",
+  "inflate",
+  "gravity",
+  "liquid",
+  "bokeh",
+  "stretch",
+  "breathing",
+  "morph",
+  "parallax",
+  "twist",
+  "flatten",
+  "pinch",
+  "slice",
+  // Ambient family
+  "tornado",
+  "matrix",
+  "constellation",
+  "lens",
+  "orbit",
+  "quantum",
+  "static",
+  "sand",
+  "bubbles",
+  "comet",
+  "ink",
+  // Visual family
+  "vanish",
+  "hueshift",
+  "cloak",
+  "mirror",
+  "scaleup",
 ]);
 
 export interface Effect {
@@ -210,6 +259,15 @@ export const ENTRANCE_EFFECTS: Effect[] = [
 ];
 
 export const ALL_EFFECTS: Effect[] = [...HOVER_EFFECTS, ...ENTRANCE_EFFECTS];
+
+// Sync the `implemented` flag on each effect with IMPLEMENTED_EFFECTS so the
+// gallery UI (effect-cards.tsx) reflects GLSL registry state from a single
+// source of truth. This keeps effects.ts and glsl-effects.ts in lockstep.
+for (const effect of ALL_EFFECTS) {
+  if (IMPLEMENTED_EFFECTS.has(effect.slug)) {
+    effect.implemented = true;
+  }
+}
 
 export function getEffectBySlug(slug: string): Effect | undefined {
   return ALL_EFFECTS.find((e) => e.slug === slug);
