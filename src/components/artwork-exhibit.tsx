@@ -18,9 +18,9 @@ const DISPLAY_IDS = ARTWORKS.map((a) => a.id);
 
 export function ArtworkExhibit() {
   return (
-    <section className="mb-20 mt-12">
+    <section className="mb-28">
       {/* Section header */}
-      <div className="mb-8">
+      <div className="mb-12">
         <div className="mb-4 flex items-center gap-4">
           <span
             className="font-mono text-[10px] font-medium uppercase tracking-[0.3em]"
@@ -33,7 +33,7 @@ export function ArtworkExhibit() {
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <h2
-              className="text-2xl font-bold sm:text-3xl"
+              className="text-3xl font-bold sm:text-4xl"
               style={{
                 fontFamily: "var(--font-heading), serif",
                 color: "oklch(0.92 0.015 85)",
@@ -76,6 +76,7 @@ function ArtworkCard({
   index?: number;
 }) {
   const [visible, setVisible] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -100,18 +101,31 @@ function ArtworkCard({
     <div
       ref={cardRef}
       className={`group painting-frame ${visible ? "reveal visible" : `reveal ${delayClass}`}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {/* Glow */}
       <div className="painting-glow" />
 
       {/* Canvas area — image rendered as particles */}
       <div className="relative h-56 overflow-hidden sm:h-64" style={{ zIndex: 2, background: "oklch(0.04 0.02 260)" }}>
-        <ParticlePainting
-          artwork={artwork}
-          className="h-full w-full"
-          cursorRadius={90}
-          scatterStrength={4}
-        />
+        {hovered ? (
+          <ParticlePainting
+            artwork={artwork}
+            className="h-full w-full"
+            cursorRadius={90}
+            scatterStrength={4}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <img
+              src={artwork.imageUrl}
+              alt={`${artwork.title} by ${artwork.artist}`}
+              className="h-full w-full object-cover opacity-60 transition-opacity duration-500 group-hover:opacity-0"
+              loading="lazy"
+            />
+          </div>
+        )}
       </div>
 
       {/* Plaque */}

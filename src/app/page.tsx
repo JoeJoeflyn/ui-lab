@@ -114,9 +114,6 @@ export default function HomePage() {
         {/* ---- Centerpiece Exhibit ---- */}
         <EffectHero effects={HOVER_EFFECTS} />
 
-        {/* ---- Particle Paintings ---- */}
-        <ArtworkExhibit />
-
         {/* ---- Gallery Navigation ---- */}
         <nav className="mb-20 flex flex-wrap justify-center gap-5">
           <a
@@ -134,6 +131,14 @@ export default function HomePage() {
           >
             <span className="mr-1.5 font-mono text-[9px] text-gold/40">02</span>
             Cinematic Collection
+          </a>
+          <a
+            href="#salon"
+            className="plaque-gold group rounded-full px-5 py-2 text-xs transition-all duration-300 hover:px-6"
+            style={{ color: "oklch(0.82 0.16 85 / 75%)" }}
+          >
+            <span className="mr-1.5 font-mono text-[9px] text-gold/40">03</span>
+            Particle Paintings
           </a>
         </nav>
 
@@ -250,6 +255,13 @@ export default function HomePage() {
             );
           })}
         </section>
+
+        {/* ================================================================
+            SALON — Particle Paintings
+            ================================================================ */}
+        <div id="salon">
+          <ArtworkExhibit />
+        </div>
 
         {/* ================================================================
             FOOTER — Museum Plaque
