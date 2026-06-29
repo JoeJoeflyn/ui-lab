@@ -11,13 +11,16 @@ import type { Effect } from "@/lib/effects";
 export function EffectPreview({ effect }: { effect: Effect }) {
   if (!effect.implemented) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-lg border border-border bg-card">
+      <div className="painting-frame flex h-72 items-center justify-center rounded-xl bg-card">
         <div className="text-center">
-          <p className="text-2xl font-bold text-muted-foreground/40" style={{ fontFamily: "var(--font-heading), sans-serif" }}>
+          <p
+            className="text-3xl font-bold text-muted-foreground/30"
+            style={{ fontFamily: "var(--font-heading), serif" }}
+          >
             {effect.name}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            GLSL shader not yet implemented — coming soon
+          <p className="mt-3 text-xs uppercase tracking-[0.2em] text-gold/40">
+            Coming to the gallery
           </p>
         </div>
       </div>
@@ -25,14 +28,14 @@ export function EffectPreview({ effect }: { effect: Effect }) {
   }
 
   return (
-    <div className="h-64 overflow-hidden rounded-lg border border-border bg-card">
+    <div className="painting-frame h-72 overflow-hidden rounded-xl bg-card sm:h-80">
       <ParticleText
         text="UI Lab"
         hoverMode={effect.slug as never}
-        particleCount={10000}
-        cursorRadius={150}
-        color={[0.5, 0.75, 0.9]}
-        glowColor={[1.0, 0.4, 0.7]}
+        particleCount={12000}
+        cursorRadius={160}
+        color={[0.6, 0.75, 0.9]}
+        glowColor={[0.95, 0.75, 0.3]}
         opacity={0.9}
         idleAnimation
       />

@@ -12,8 +12,6 @@ export default function EffectPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  // Next 15+ async params — but generateStaticParams makes this synchronous-safe.
-  // We resolve synchronously via the lookup since slugs are pre-rendered.
   return <EffectPageInner params={params} />;
 }
 
@@ -39,89 +37,114 @@ async function EffectPageInner({
 />`;
 
   return (
-    <main className="relative min-h-screen">
-      <div className="pointer-events-none fixed inset-0 dot-grid opacity-40" />
+    <main className="relative min-h-screen brushstroke-bg">
+      <div className="pointer-events-none fixed inset-0 swirl-overlay" />
+      <div
+        className="glow-orb bg-starry-blue"
+        style={{ top: "0%", left: "10%", width: "400px", height: "400px" }}
+      />
 
-      <div className="relative mx-auto max-w-5xl px-6 py-12">
+      <div className="relative mx-auto max-w-5xl px-6 py-16">
         {/* Breadcrumb */}
         <Link
           href="/"
-          className="mb-8 inline-block text-xs text-muted-foreground hover:text-accent-foreground"
+          className="mb-10 inline-flex items-center gap-2 text-xs text-gold/60 transition-colors hover:text-gold"
         >
-          ← Back to gallery
+          <span>←</span>
+          <span className="uppercase tracking-[0.2em]">Back to Gallery</span>
         </Link>
 
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="rounded bg-muted px-2 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
-                {effect.kind}
-              </span>
-              <span className="rounded bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                {effect.category}
-              </span>
-              <span className="rounded bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                {effect.specRef}
-              </span>
-            </div>
-            <h1
-              className="text-3xl font-bold sm:text-4xl"
-              style={{ fontFamily: "var(--font-heading), sans-serif" }}
-            >
-              {effect.name}
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-              {effect.feel}
-            </p>
+        {/* Header — exhibit plaque */}
+        <div className="mb-10">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="plaque rounded px-2 py-0.5 font-mono text-[10px] uppercase text-gold/60">
+              {effect.kind}
+            </span>
+            <span className="plaque rounded px-2 py-0.5 font-mono text-[10px] text-starry-cyan/60">
+              {effect.category}
+            </span>
+            <span className="plaque rounded px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+              {effect.specRef}
+            </span>
           </div>
+          <h1
+            className="text-4xl font-bold sm:text-5xl"
+            style={{ fontFamily: "var(--font-heading), serif" }}
+          >
+            <span className="gold-shimmer">{effect.name}</span>
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            {effect.feel}
+          </p>
         </div>
 
-        {/* Live preview */}
-        <section className="mb-10">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Live preview {effect.implemented ? "" : "· not yet implemented"}
-          </h2>
+        {/* Live preview — the exhibit */}
+        <section className="mb-12">
+          <div className="mb-4 flex items-center gap-4">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/60">
+              The Exhibit
+            </h2>
+            <div className="brushstroke-divider flex-1" />
+          </div>
           <EffectPreview effect={effect} />
+          {!effect.implemented && (
+            <p className="mt-3 text-center text-xs text-muted-foreground/60">
+              This work has not yet been installed in the gallery
+            </p>
+          )}
         </section>
 
-        {/* Technique */}
-        <section className="mb-10">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Key technique
-          </h2>
-          <p className="font-mono text-xs text-card-foreground">
-            {effect.technique}
-          </p>
+        {/* Technique — artist's notes */}
+        <section className="mb-12">
+          <div className="mb-4 flex items-center gap-4">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/60">
+              Technique
+            </h2>
+            <div className="brushstroke-divider flex-1" />
+          </div>
+          <div className="plaque rounded-lg p-4">
+            <p className="font-mono text-xs text-card-foreground/80">
+              {effect.technique}
+            </p>
+          </div>
         </section>
 
-        {/* Code example */}
-        <section className="mb-10">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Usage
-          </h2>
-          <pre className="overflow-x-auto rounded-lg border border-border bg-card p-4 font-mono text-xs text-card-foreground">
+        {/* Code example — the blueprint */}
+        <section className="mb-12">
+          <div className="mb-4 flex items-center gap-4">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/60">
+              Blueprint
+            </h2>
+            <div className="brushstroke-divider flex-1" />
+          </div>
+          <pre className="overflow-x-auto rounded-lg border border-gold/10 bg-card p-5 font-mono text-xs text-card-foreground/80">
             <code>{codeExample}</code>
           </pre>
         </section>
 
-        {/* Neighbors */}
-        <section className="mb-10">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            More in {effect.category}
-          </h2>
-          <div className="flex flex-wrap gap-2">
+        {/* Neighbors — more in the collection */}
+        <section className="mb-12">
+          <div className="mb-4 flex items-center gap-4">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold/60">
+              More in {effect.category}
+            </h2>
+            <div className="brushstroke-divider flex-1" />
+          </div>
+          <div className="flex flex-wrap gap-3">
             {ALL_EFFECTS.filter(
               (e) => e.category === effect.category && e.slug !== effect.slug,
             )
-              .slice(0, 8)
+              .slice(0, 12)
               .map((e) => (
                 <Link
                   key={e.slug}
                   href={`/effects/${e.slug}`}
-                  className="rounded-full border border-border bg-card px-3 py-1 text-xs text-card-foreground transition-colors hover:border-accent-foreground/40 hover:text-accent-foreground"
+                  className="plaque rounded-full px-4 py-2 text-xs text-card-foreground/70 transition-colors hover:text-gold"
                 >
                   {e.name}
+                  {e.implemented && (
+                    <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-gold/60" />
+                  )}
                 </Link>
               ))}
           </div>

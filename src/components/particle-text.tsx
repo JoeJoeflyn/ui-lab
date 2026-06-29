@@ -94,7 +94,7 @@ export function ParticleText({
 
     // --- 2. Build geometry ---
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("aPosition", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
     // Per-particle random (stable, 0..1)
     const randoms = new Float32Array(count);
@@ -128,6 +128,9 @@ export function ParticleText({
       },
     });
 
+    // Compute bounding sphere so three.js doesn't skip rendering
+    geometry.computeBoundingSphere();
+
     // --- 4. Scene setup ---
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(
@@ -146,6 +149,7 @@ export function ParticleText({
     container.appendChild(renderer.domElement);
 
     const points = new THREE.Points(geometry, material);
+    points.frustumCulled = false; // prevent culling when particles displace
     scene.add(points);
 
     // --- 5. Cursor tracking + smoothed strength ---

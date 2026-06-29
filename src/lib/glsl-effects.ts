@@ -7,7 +7,7 @@
  * supporting many effects incrementally.
  *
  * Each effect receives:
- *   - home position (aPosition) — the text-sampled rest position
+ *   - home position (position) — the text-sampled rest position
  *   - cursor position (uCursor)  — in world space
  *   - uStrength (0..1)           — hover intensity, smoothed
  *   - uTime                      — elapsed seconds
@@ -36,12 +36,12 @@ export type EffectSlug = keyof typeof EFFECT_IDS;
 
 /** Vertex shader — shared preamble + effect dispatch. */
 export const VERTEX_SHADER = /* glsl */ `
-  attribute vec3 aPosition;    // home (rest) position from text sampler
+  attribute vec3 position;     // home (rest) position from text sampler (standard three.js attr)
   attribute float aSize;       // per-particle base size
   attribute float aRandom;     // per-particle random 0..1 (stable)
 
   uniform float uTime;
-  uniform vec2  uCursor;       // cursor in world space (same coord system as aPosition)
+  uniform vec2  uCursor;       // cursor in world space (same coord system as position)
   uniform float uCursorRadius;
   uniform float uStrength;     // 0 = idle, 1 = fully hovered
   uniform float uPixelRatio;
@@ -52,7 +52,7 @@ export const VERTEX_SHADER = /* glsl */ `
 
   // Distance from cursor with falloff
   float cursorDist() {
-    return distance(aPosition.xy, uCursor);
+    return distance(position.xy, uCursor);
   }
 
   // Normalized influence 0..1 within cursor radius
@@ -163,7 +163,7 @@ export const VERTEX_SHADER = /* glsl */ `
   }
 
   void main() {
-    vec3 displaced = displace(aPosition);
+    vec3 displaced = displace(position);
     vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 

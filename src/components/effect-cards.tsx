@@ -6,8 +6,8 @@ import { ParticleText } from "@/components/particle-text";
 import type { Effect } from "@/lib/effects";
 
 /**
- * EffectMiniCard — card with a small live particle canvas.
- * The canvas plays the effect on hover. Compact mode (3000 particles).
+ * EffectMiniCard — gallery painting card with live particle canvas.
+ * Styled as a museum painting frame with spotlight on hover.
  */
 export function EffectMiniCard({ effect }: { effect: Effect }) {
   const [hovered, setHovered] = useState(false);
@@ -15,12 +15,12 @@ export function EffectMiniCard({ effect }: { effect: Effect }) {
   return (
     <Link
       href={`/effects/${effect.slug}`}
-      className="group relative block overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-accent-foreground/40"
+      className="group gallery-spotlight painting-frame block overflow-hidden rounded-lg"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Mini canvas — only mount when hovered or implemented (for hero rotation) */}
-      <div className="relative h-28 overflow-hidden">
+      {/* Canvas — the "painting" */}
+      <div className="relative h-32 overflow-hidden bg-card">
         {effect.implemented ? (
           <ParticleText
             text={effect.name}
@@ -28,45 +28,53 @@ export function EffectMiniCard({ effect }: { effect: Effect }) {
             compact
             particleCount={2500}
             cursorRadius={80}
-            color={[0.45, 0.7, 0.84]}
-            glowColor={[1.0, 0.3, 0.6]}
-            opacity={hovered ? 0.9 : 0.5}
+            color={[0.55, 0.65, 0.85]}
+            glowColor={[0.95, 0.75, 0.3]}
+            opacity={hovered ? 0.9 : 0.55}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <span className="text-2xl font-bold text-muted-foreground/40" style={{ fontFamily: "var(--font-heading), sans-serif" }}>
+            <span
+              className="text-2xl font-bold text-muted-foreground/30"
+              style={{ fontFamily: "var(--font-heading), serif" }}
+            >
               {effect.name}
             </span>
           </div>
         )}
         {!effect.implemented && (
-          <span className="absolute right-2 top-2 rounded bg-muted/80 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">
-            soon
+          <span className="absolute right-2 top-2 rounded plaque px-1.5 py-0.5 font-mono text-[9px] text-gold/60">
+            coming soon
           </span>
         )}
       </div>
 
-      {/* Info bar */}
-      <div className="border-t border-border p-3">
+      {/* Plaque — museum label */}
+      <div className="border-t border-gold/10 p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold text-card-foreground group-hover:text-accent-foreground">
+          <h3 className="text-sm font-semibold text-card-foreground group-hover:text-gold transition-colors">
             {effect.name}
           </h3>
-          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+          <span className="shrink-0 rounded plaque px-1.5 py-0.5 font-mono text-[10px] text-gold/50">
             {effect.specRef}
           </span>
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
           {effect.feel}
         </p>
+        {effect.implemented && (
+          <p className="mt-2 font-mono text-[10px] text-starry-cyan/50">
+            {effect.technique}
+          </p>
+        )}
       </div>
     </Link>
   );
 }
 
 /**
- * EffectHero — large featured canvas at the top of the page.
- * Cycles through implemented effects on an interval.
+ * EffectHero — the centerpiece of the gallery.
+ * Large canvas with effect switcher, styled as a featured exhibit.
  */
 export function EffectHero({ effects }: { effects: Effect[] }) {
   const implemented = effects.filter((e) => e.implemented);
@@ -75,44 +83,50 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
 
   return (
     <section className="mb-20">
-      <div className="relative h-64 overflow-hidden rounded-xl border border-border bg-card sm:h-80">
+      <div className="painting-frame relative h-72 overflow-hidden rounded-xl bg-card sm:h-96">
         {current && (
           <ParticleText
             text="UI Lab"
             hoverMode={current.slug as never}
-            particleCount={10000}
-            cursorRadius={150}
-            color={[0.5, 0.75, 0.9]}
-            glowColor={[1.0, 0.4, 0.7]}
+            particleCount={12000}
+            cursorRadius={160}
+            color={[0.6, 0.75, 0.9]}
+            glowColor={[0.95, 0.75, 0.3]}
             opacity={0.9}
             idleAnimation
           />
         )}
-        {/* Effect label overlay */}
-        <div className="pointer-events-none absolute bottom-4 left-4 flex items-center gap-2">
-          <span className="rounded bg-background/80 px-2 py-1 font-mono text-[10px] uppercase text-muted-foreground backdrop-blur">
-            {current?.kind}
-          </span>
-          <span className="rounded bg-background/80 px-2 py-1 text-xs font-medium text-card-foreground backdrop-blur">
-            {current?.name}
-          </span>
+
+        {/* Featured exhibit label */}
+        <div className="pointer-events-none absolute bottom-5 left-5 flex items-center gap-3">
+          <div className="plaque rounded px-3 py-2">
+            <p className="text-[9px] uppercase tracking-[0.2em] text-gold/50">
+              Featured Exhibit
+            </p>
+            <p className="mt-0.5 text-sm font-medium text-gold">
+              {current?.name}
+            </p>
+          </div>
         </div>
-        {/* Effect switcher dots */}
-        <div className="pointer-events-auto absolute bottom-4 right-4 flex gap-1.5">
+
+        {/* Effect switcher — gallery navigation dots */}
+        <div className="pointer-events-auto absolute bottom-5 right-5 flex gap-2">
           {implemented.map((e, i) => (
             <button
               key={e.slug}
               onClick={() => setIdx(i)}
-              className={`h-2 w-2 rounded-full transition-colors ${
-                i === idx ? "bg-accent-foreground" : "bg-muted-foreground/30 hover:bg-muted-foreground/60"
+              className={`h-2.5 w-2.5 rounded-full transition-all ${
+                i === idx
+                  ? "bg-gold scale-110"
+                  : "bg-muted-foreground/20 hover:bg-gold/40"
               }`}
               aria-label={`Show ${e.name}`}
             />
           ))}
         </div>
       </div>
-      <p className="mt-3 text-center text-xs text-muted-foreground">
-        Hover the canvas to interact · Click dots to switch effects
+      <p className="mt-4 text-center text-xs text-muted-foreground/60">
+        Move your cursor across the canvas to interact · Tap dots to switch exhibits
       </p>
     </section>
   );
