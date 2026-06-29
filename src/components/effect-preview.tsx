@@ -31,13 +31,15 @@ export function EffectPreview({ effect }: { effect: Effect }) {
     <div className="painting-frame h-72 overflow-hidden rounded-xl bg-card sm:h-80">
       <ParticleText
         text="UI Lab"
-        hoverMode={effect.slug as never}
+        hoverMode={(effect.kind === "entrance" ? "dissolve" : effect.slug) as never}
+        entranceMode={effect.kind === "entrance" ? (effect.slug as never) : undefined}
+        entranceLoop={effect.kind === "entrance"}
         particleCount={12000}
         cursorRadius={160}
         color={[0.6, 0.75, 0.9]}
         glowColor={[0.95, 0.75, 0.3]}
         opacity={0.9}
-        idleAnimation
+        idleAnimation={effect.kind === "hover"}
       />
     </div>
   );

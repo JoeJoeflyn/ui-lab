@@ -29,7 +29,7 @@ async function EffectPageInner({
   text="UI Lab"
   hoverMode="${effect.kind === "hover" ? effect.slug : "dissolve"}"${
     effect.kind === "entrance"
-      ? `\n  entrance="${effect.slug}"`
+      ? `\n  entranceMode="${effect.slug}"`
       : ""
   }
   particleCount={8000}
@@ -56,7 +56,11 @@ export function MyComponent() {
     <div className="h-64 w-full">
       <ParticleText
         text="Hello World"
-        hoverMode="${effect.kind === "hover" ? effect.slug : "dissolve"}"
+        hoverMode="${effect.kind === "hover" ? effect.slug : "dissolve"}"${
+          effect.kind === "entrance"
+            ? `\n        entranceMode="${effect.slug}"`
+            : ""
+        }
         particleCount={8000}
         cursorRadius={120}
         color={[0.6, 0.75, 0.9]}

@@ -49,9 +49,10 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      const isEntrance = effect.kind === "entrance";
       const code = `<ParticleText
   text="Your Text"
-  hoverMode="${effect.slug}"
+  hoverMode="${isEntrance ? "dissolve" : effect.slug}"${isEntrance ? `\n  entranceMode="${effect.slug}"` : ""}
   particleCount={8000}
   cursorRadius={120}
   color={[0.6, 0.75, 0.9]}
@@ -63,7 +64,7 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
         setTimeout(() => setCopied(false), 2000);
       });
     },
-    [effect.slug],
+    [effect.slug, effect.kind],
   );
 
   return (
@@ -90,7 +91,9 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
         {effect.implemented ? (
           <ParticleText
             text={effect.name}
-            hoverMode={effect.slug as never}
+            hoverMode={(effect.kind === "entrance" ? "dissolve" : effect.slug) as never}
+            entranceMode={effect.kind === "entrance" ? (effect.slug as never) : undefined}
+            entranceLoop={effect.kind === "entrance"}
             compact
             particleCount={2500}
             cursorRadius={80}
@@ -202,13 +205,15 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
           {current && (
             <ParticleText
               text="UI Lab"
-              hoverMode={current.slug as never}
+              hoverMode={(current.kind === "entrance" ? "dissolve" : current.slug) as never}
+              entranceMode={current.kind === "entrance" ? (current.slug as never) : undefined}
+              entranceLoop={current.kind === "entrance"}
               particleCount={12000}
               cursorRadius={160}
               color={[0.6, 0.75, 0.9]}
               glowColor={[0.95, 0.75, 0.3]}
               opacity={0.9}
-              idleAnimation
+              idleAnimation={current.kind === "hover"}
             />
           )}
         </div>

@@ -7,6 +7,7 @@ import {
   VERTEX_SHADER,
   FRAGMENT_SHADER,
   EFFECT_IDS,
+  ENTRANCE_EFFECT_IDS,
   type EffectSlug,
 } from "@/lib/glsl-effects";
 
@@ -23,6 +24,7 @@ import {
  */
 
 export type HoverMode = EffectSlug;
+export type EntranceMode = keyof typeof ENTRANCE_EFFECT_IDS;
 
 export type Falloff = "gaussian" | "linear" | "smoothstep" | "manhattan" | "chebyshev";
 
@@ -40,6 +42,14 @@ export interface ParticleTextProps {
   glowColor?: [number, number, number];
   /** Which hover effect to use. */
   hoverMode: HoverMode;
+  /** Which entrance effect to play on mount. */
+  entranceMode?: EntranceMode;
+  /** Enable the entrance animation. Default true. */
+  entrance?: boolean;
+  /** Entrance duration in ms. Default 1500. */
+  entranceDuration?: number;
+  /** Loop the entrance animation (gallery cards). Default false. */
+  entranceLoop?: boolean;
   /** Cursor influence radius in world units. Default 120. */
   cursorRadius?: number;
   /** Falloff curve (currently unused in shader — reserved for future). */
@@ -62,6 +72,10 @@ export function ParticleText({
   color = [0.45, 0.7, 0.84],
   glowColor = [1.0, 0.3, 0.6],
   hoverMode = "dissolve",
+  entranceMode,
+  entrance = true,
+  entranceDuration = 1500,
+  entranceLoop = false,
   cursorRadius = 120,
   falloff = "gaussian",
   opacity = 0.85,
@@ -108,6 +122,39 @@ export function ParticleText({
     }
     geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
 
+    // Per-particle random offscreen origin (scatter source for entrance)
+    const origins = new Float32Array(count * 3);
+    const originSpread = (width + height) * 0.8;
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = originSpread * (0.6 + Math.random() * 0.8);
+      origins[i * 3] = Math.cos(a) * d;
+      origins[i * 3 + 1] = Math.sin(a) * d;
+      origins[i * 3 + 2] = (Math.random() - 0.5) * 200;
+    }
+    geometry.setAttribute("aOrigin", new THREE.BufferAttribute(origins, 3));
+
+    // Per-particle normalized index 0..1 (for staggered entrance effects)
+    const indices = new Float32Array(count);
+    for (let i = 0; i < count; i++) indices[i] = i / count;
+    geometry.setAttribute("aIndex", new THREE.BufferAttribute(indices, 1));
+
+    // Text bounding-box half-extents (for entrance origin math)
+    let maxX = 0;
+    let maxY = 0;
+    for (let i = 0; i < count; i++) {
+      maxX = Math.max(maxX, Math.abs(positions[i * 3]));
+      maxY = Math.max(maxY, Math.abs(positions[i * 3 + 1]));
+    }
+    const boundsX = maxX || width / 2;
+    const boundsY = maxY || height / 2;
+
+    // Entrance config
+    const entranceEnabled = entrance && entranceMode != null;
+    const entranceId = entranceEnabled
+      ? (ENTRANCE_EFFECT_IDS[entranceMode] ?? -1)
+      : -1;
+
     // --- 3. Shader material ---
     const material = new THREE.ShaderMaterial({
       vertexShader: VERTEX_SHADER,
@@ -122,6 +169,9 @@ export function ParticleText({
         uStrength: { value: 0 },
         uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
         uEffect: { value: EFFECT_IDS[hoverMode] ?? 0 },
+        uEntranceMode: { value: entranceId },
+        uProgress: { value: entranceEnabled ? 0 : 1 },
+        uBounds: { value: new THREE.Vector2(boundsX, boundsY) },
         uColor: { value: new THREE.Color(...color) },
         uGlowColor: { value: new THREE.Color(...glowColor) },
         uOpacity: { value: opacity },
@@ -178,6 +228,8 @@ export function ParticleText({
     // --- 6. Animation loop ---
     let frameId = 0;
     const timer = new THREE.Timer();
+    const entranceStartRef = { value: performance.now() };
+    const entranceHoldMs = 1200;
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
@@ -186,6 +238,16 @@ export function ParticleText({
 
       // Smooth strength toward target
       currentStrength += (targetStrength - currentStrength) * 0.08;
+
+      // Entrance progress (linear 0..1; per-effect easing happens in shader)
+      if (entranceEnabled) {
+        const e = performance.now() - entranceStartRef.value;
+        const prog = Math.min(e / entranceDuration, 1);
+        material.uniforms.uProgress.value = prog;
+        if (entranceLoop && e > entranceDuration + entranceHoldMs) {
+          entranceStartRef.value = performance.now();
+        }
+      }
 
       material.uniforms.uTime.value = elapsed;
       material.uniforms.uCursor.value.copy(cursor);
@@ -240,6 +302,10 @@ export function ParticleText({
     color,
     glowColor,
     hoverMode,
+    entranceMode,
+    entrance,
+    entranceDuration,
+    entranceLoop,
     cursorRadius,
     falloff,
     opacity,
@@ -253,6 +319,7 @@ export function ParticleText({
       ref={containerRef}
       style={{ width: "100%", height: fillContainer ? "100%" : compact ? 120 : 400 }}
       data-hover-mode={hoverMode}
+      data-entrance-mode={entranceMode ?? ""}
       data-cursor-radius={cursorRadius}
       data-falloff={falloff}
     />
