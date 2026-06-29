@@ -62,6 +62,8 @@ export interface ParticleTextProps {
   idleAnimation?: boolean;
   /** Compact mode — smaller particles, fewer count. For mini cards. */
   compact?: boolean;
+  /** Pause the animation loop without destroying WebGL context. Default false. */
+  paused?: boolean;
 }
 
 export function ParticleText({
@@ -82,8 +84,11 @@ export function ParticleText({
   fillContainer = true,
   idleAnimation = false,
   compact = false,
+  paused = false,
 }: ParticleTextProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -233,6 +238,7 @@ export function ParticleText({
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
+      if (pausedRef.current) return; // pause without destroying context
       timer.update();
       const elapsed = timer.getElapsed();
 
@@ -299,8 +305,6 @@ export function ParticleText({
     particleCount,
     fontSize,
     weight,
-    color,
-    glowColor,
     hoverMode,
     entranceMode,
     entrance,

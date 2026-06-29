@@ -24,9 +24,12 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
   const [copied, setCopied] = useState(false);
   const cardRef = useRef<HTMLAnchorElement>(null);
   const [revealed, setRevealed] = useState(false);
+  // Entrance cards: mount WebGL once when first visible, then pause/unpause on scroll.
+  // Hover cards: only mount WebGL on hover.
+  const [mounted, setMounted] = useState(false);
   const [inView, setInView] = useState(false);
-  // Entrance cards auto-play when in view; hover cards need hover
-  const shouldRender = isEntrance ? inView : hovered;
+  const shouldRender = isEntrance ? mounted : hovered;
+  const paused = isEntrance ? !inView : !hovered;
 
   useEffect(() => {
     const el = cardRef.current;
@@ -38,9 +41,9 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
           if (!revealed) {
             setTimeout(() => setRevealed(true), (index % 8) * 40);
           }
+          if (isEntrance && !mounted) setMounted(true);
           setInView(true);
         } else {
-          // Unmount WebGL when scrolled away (bounds context count)
           setInView(false);
         }
       },
@@ -49,7 +52,7 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [index, revealed]);
+  }, [index, revealed, isEntrance, mounted]);
 
   const delayClass = `reveal-delay-${(index % 6) + 1}`;
 
@@ -103,6 +106,7 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
               entranceMode={isEntrance ? (effect.slug as never) : undefined}
               entranceLoop={isEntrance}
               compact
+              paused={paused}
               particleCount={2500}
               cursorRadius={80}
               color={[0.55, 0.65, 0.85]}
@@ -185,23 +189,6 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
   const DOT_COUNT = Math.min(12, implemented.length);
   const [idx, setIdx] = useState(0);
   const current = implemented[idx] ?? implemented[0];
-  // Auto-advance timer reference — reset on manual navigation
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const scheduleAutoAdvance = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setIdx((i) => (i + 1) % implemented.length);
-    }, 5000);
-  }, [implemented.length]);
-
-  // Start / restart the auto-advance timer whenever the index changes
-  useEffect(() => {
-    scheduleAutoAdvance();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [idx, scheduleAutoAdvance]);
 
   const next = useCallback(() => {
     setIdx((i) => (i + 1) % implemented.length);
@@ -314,7 +301,7 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
 
       {/* Interaction hint */}
       <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/40">
-        Move cursor across canvas · Auto-cycling every 5s · Navigate with dots ·{" "}
+        Move cursor across canvas · Navigate with dots ·{" "}
         <span className="text-gold/50">{idx + 1} / {implemented.length}</span>
       </p>
     </section>
