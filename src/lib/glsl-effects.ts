@@ -85,6 +85,93 @@ export const EFFECT_IDS = {
 
 export type EffectSlug = keyof typeof EFFECT_IDS;
 
+// --- Entrance effects (Phase 2) — IDs 0..74 keyed by uEntranceMode ---
+export const ENTRANCE_EFFECT_IDS = {
+  // Direction (0-11)
+  "rise-up": 0,
+  "fall-down": 1,
+  "slide-left": 2,
+  "slide-right": 3,
+  "slide-up": 4,
+  "slide-down": 5,
+  "diagonal-tl": 6,
+  "diagonal-tr": 7,
+  "diagonal-bl": 8,
+  "diagonal-br": 9,
+  converge: 10,
+  diverge: 11,
+  // Wave (12-23)
+  "wave-right": 12,
+  "wave-left": 13,
+  "wave-up": 14,
+  "wave-down": 15,
+  "radial-bloom": 16,
+  "radial-implode": 17,
+  "circular-reveal": 18,
+  "diamond-reveal": 19,
+  "diagonal-wave": 20,
+  "anti-diagonal-wave": 21,
+  "sine-wave": 22,
+  "spiral-reveal": 23,
+  // Easing (24-32)
+  "power3-out": 24,
+  "power5-out": 25,
+  "expo-out": 26,
+  "sine-out": 27,
+  "back-out": 28,
+  "elastic-out": 29,
+  "bounce-out": 30,
+  "circ-out": 31,
+  linear: 32,
+  // Morph (33-41)
+  "morph-sphere": 33,
+  "morph-cube": 34,
+  "morph-grid": 35,
+  "morph-circle": 36,
+  "morph-line": 37,
+  "morph-cloud": 38,
+  "morph-spiral": 39,
+  "morph-torus": 40,
+  "morph-wave": 41,
+  // Physics (42-48)
+  "gravity-settle": 42,
+  rain: 43,
+  snow: 44,
+  ascend: 45,
+  smoke: 46,
+  "ember-rise": 47,
+  "magnetic-snap": 48,
+  // Special (49-74)
+  "explode-inward": 49,
+  starburst: 50,
+  fireworks: 51,
+  "vortex-in": 52,
+  "tornado-in": 53,
+  "orbit-in": 54,
+  "scatter-gather": 55,
+  teleport: 56,
+  "quantum-assemble": 57,
+  pixelate: 58,
+  "dissolve-in": 59,
+  materialize: 60,
+  "blur-in": 61,
+  "scale-up": 62,
+  "scale-down": 63,
+  "flip-x": 64,
+  "flip-y": 65,
+  cascade: 66,
+  "liquid-flow": 67,
+  "constellation-form": 68,
+  typewriter: 69,
+  "curtain-open": 70,
+  "venetian-blinds": 71,
+  scanline: 72,
+  "glitch-assemble": 73,
+  "ink-spread": 74,
+} as const;
+
+export type EntranceEffectSlug = keyof typeof ENTRANCE_EFFECT_IDS;
+
 /** Vertex shader — shared preamble + effect dispatch. */
 export const VERTEX_SHADER = /* glsl */ `
   // position is provided by Three.js via geometry.setAttribute("position", …)
@@ -97,6 +184,18 @@ export const VERTEX_SHADER = /* glsl */ `
   uniform float uStrength;     // 0 = idle, 1 = fully hovered
   uniform float uPixelRatio;
   uniform int   uEffect;       // effect dispatch key (see EFFECT_IDS)
+
+  // --- Entrance animation (Phase 2) ---
+  uniform int   uEntranceMode; // entrance dispatch key (see ENTRANCE_EFFECT_IDS), -1 = none
+  uniform float uProgress;     // 0..1 entrance progress (linear; per-effect eases it)
+  uniform vec2  uBounds;       // half-extents of text bounding box (x, y)
+
+  attribute vec3  aOrigin;     // per-particle random offscreen origin (scatter source)
+  attribute float aIndex;      // per-particle normalized index 0..1 (for staggered effects)
+
+  // Entrance state (written by applyEntrance, read in main — not passed to fragment)
+  float vEntranceAlpha;
+  float vEntranceScale;
 
   varying float vAlpha;
   varying float vGlow;
@@ -123,6 +222,468 @@ export const VERTEX_SHADER = /* glsl */ `
 
   vec2 hash2(float n) {
     return vec2(hash(n), hash(n + 1.7));
+  }
+
+  // ---- Easing helpers (entrance) ----
+  float easeOutPow(float t, float n) { return 1.0 - pow(1.0 - t, n); }
+  float easeExpoOut(float t) { return t >= 1.0 ? 1.0 : 1.0 - pow(2.0, -10.0 * t); }
+  float easeSineOut(float t) { return sin(t * 1.5707963); }
+  float easeCircOut(float t) { return sqrt(1.0 - pow(1.0 - t, 2.0)); }
+  float easeBackOut(float t) {
+    float c1 = 1.70158; float c3 = c1 + 1.0;
+    return 1.0 + c3 * pow(t - 1.0, 3.0) + c1 * pow(t - 1.0, 2.0);
+  }
+  float easeElasticOut(float t) {
+    if (t <= 0.0) return 0.0; if (t >= 1.0) return 1.0;
+    float c4 = 2.0943951;
+    return pow(2.0, -10.0 * t) * sin((t * 10.0 - 0.75) * c4) + 1.0;
+  }
+  float easeBounceOut(float t) {
+    float n1 = 7.5625; float d1 = 2.75;
+    if (t < 1.0 / d1) return n1 * t * t;
+    else if (t < 2.0 / d1) { t -= 1.5 / d1; return n1 * t * t + 0.75; }
+    else if (t < 2.5 / d1) { t -= 2.25 / d1; return n1 * t * t + 0.9375; }
+    else { t -= 2.625 / d1; return n1 * t * t + 0.984375; }
+  }
+
+  // Entrance dispatch — animates particles from an origin to their text target
+  // based on uProgress (0..1). Sets vEntranceAlpha (alpha multiplier) and
+  // vEntranceScale (point-size multiplier). When uEntranceMode < 0 or progress
+  // is 1, returns the target unchanged with full alpha/scale.
+  vec3 applyEntrance(vec3 target) {
+    vec3 pos = target;
+    vEntranceAlpha = 1.0;
+    vEntranceScale = 1.0;
+
+    int m = uEntranceMode;
+    if (m < 0 || uProgress >= 1.0) return pos;
+
+    float p = uProgress;
+    float r = aRandom;
+    float W = uBounds.x;
+    float H = uBounds.y;
+    float maxR = length(uBounds);
+    float xNorm = clamp((target.x / max(W, 1.0)) * 0.5 + 0.5, 0.0, 1.0);
+    float yNorm = clamp((target.y / max(H, 1.0)) * 0.5 + 0.5, 0.0, 1.0);
+    float dist = length(target.xy);
+    float ang = atan(target.y, target.x);
+
+    // ===== Direction family (0-11) =====
+    if (m == 0) { // rise-up
+      float e = easeOutPow(p, 3.0);
+      pos = mix(target - vec3(0.0, H * 2.2, 0.0), target, e);
+      vEntranceAlpha = smoothstep(0.0, 0.1, p);
+    }
+    else if (m == 1) { // fall-down
+      float e = easeOutPow(p, 3.0);
+      pos = mix(target + vec3(0.0, H * 2.2, 0.0), target, e);
+      vEntranceAlpha = smoothstep(0.0, 0.1, p);
+    }
+    else if (m == 2) { // slide-left (enter from right)
+      float e = easeOutPow(p, 3.0);
+      pos = mix(target + vec3(W * 2.2, 0.0, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 3) { // slide-right (enter from left)
+      float e = easeOutPow(p, 3.0);
+      pos = mix(target - vec3(W * 2.2, 0.0, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 4) { // slide-up (enter from bottom)
+      float e = p;
+      pos = mix(target - vec3(0.0, H * 2.2, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 5) { // slide-down (enter from top)
+      float e = p;
+      pos = mix(target + vec3(0.0, H * 2.2, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 6) { // diagonal-tl
+      float e = easeOutPow(p, 3.0);
+      pos = mix(target + vec3(-W * 2.2, H * 2.2, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 7) { // diagonal-tr
+      float e = easeOutPow(p, 3.0);
+      pos = mix(target + vec3(W * 2.2, H * 2.2, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 8) { // diagonal-bl
+      float e = easeOutPow(p, 3.0);
+      pos = mix(target + vec3(-W * 2.2, -H * 2.2, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 9) { // diagonal-br
+      float e = easeOutPow(p, 3.0);
+      pos = mix(target + vec3(W * 2.2, -H * 2.2, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 10) { // converge — from nearest screen edge
+      float e = easeOutPow(p, 3.0);
+      vec2 d = vec2(target.x >= 0.0 ? W * 2.2 : -W * 2.2, target.y >= 0.0 ? H * 2.2 : -H * 2.2);
+      pos = mix(target + vec3(d, 0.0), target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 11) { // diverge — from center outward
+      float e = easeOutPow(p, 3.0);
+      pos = mix(vec3(0.0), target, e);
+      vEntranceAlpha = e;
+    }
+
+    // ===== Wave family (12-23) =====
+    else if (m == 12) { // wave-right
+      float delay = xNorm * 0.5;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      pos = mix(target - vec3(W * 2.2, 0.0, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 13) { // wave-left
+      float delay = (1.0 - xNorm) * 0.5;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      pos = mix(target + vec3(W * 2.2, 0.0, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 14) { // wave-up
+      float delay = yNorm * 0.5;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      pos = mix(target - vec3(0.0, H * 2.2, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 15) { // wave-down
+      float delay = (1.0 - yNorm) * 0.5;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      pos = mix(target + vec3(0.0, H * 2.2, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 16) { // radial-bloom — center out
+      float delay = (dist / maxR) * 0.5;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      pos = mix(vec3(0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 17) { // radial-implode — outside in
+      float delay = (1.0 - dist / maxR) * 0.5;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      vec2 dir = normalize(target.xy + vec2(0.001));
+      pos = mix(vec3(dir * maxR * 1.5, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 18) { // circular-reveal — expanding circle mask
+      float reveal = p * maxR * 1.3;
+      vEntranceAlpha = 1.0 - smoothstep(reveal - 12.0, reveal + 12.0, dist);
+    }
+    else if (m == 19) { // diamond-reveal — Manhattan mask
+      float manh = abs(target.x) + abs(target.y);
+      float reveal = p * maxR * 1.3;
+      vEntranceAlpha = 1.0 - smoothstep(reveal - 12.0, reveal + 12.0, manh);
+    }
+    else if (m == 20) { // diagonal-wave (TL→BR)
+      float delay = (xNorm + yNorm) * 0.25;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      pos = mix(target + vec3(-W * 2.2, H * 2.2, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 21) { // anti-diagonal-wave (TR→BL)
+      float delay = ((1.0 - xNorm) + yNorm) * 0.25;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      pos = mix(target + vec3(W * 2.2, H * 2.2, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 22) { // sine-wave — wavy left-to-right front
+      float delay = (xNorm + sin(yNorm * 5.0) * 0.1) * 0.5;
+      float lp = easeOutPow(clamp((p - delay) / 0.5, 0.0, 1.0), 3.0);
+      pos = mix(target - vec3(W * 2.2, 0.0, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 23) { // spiral-reveal
+      float total = 6.28318 + maxR * 0.05;
+      float delay = (ang + dist * 0.05) / total * 0.7;
+      float lp = easeOutPow(clamp((p - delay) / 0.3, 0.0, 1.0), 3.0);
+      float sa = ang + (1.0 - lp) * 6.28318;
+      float sr = maxR * 1.4;
+      pos = mix(vec3(cos(sa) * sr, sin(sa) * sr, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+
+    // ===== Easing family (24-32) — rise + fade with named easing =====
+    else if (m == 24) { float e = easeOutPow(p, 3.0); pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = e; }
+    else if (m == 25) { float e = easeOutPow(p, 5.0); pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = e; }
+    else if (m == 26) { float e = easeExpoOut(p); pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = e; }
+    else if (m == 27) { float e = easeSineOut(p); pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = e; }
+    else if (m == 28) { float e = easeBackOut(p); pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = smoothstep(0.0, 0.1, p); }
+    else if (m == 29) { float e = easeElasticOut(p); pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = smoothstep(0.0, 0.1, p); }
+    else if (m == 30) { float e = easeBounceOut(p); pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = smoothstep(0.0, 0.1, p); }
+    else if (m == 31) { float e = easeCircOut(p); pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = e; }
+    else if (m == 32) { float e = p; pos = mix(target - vec3(0.0, H * 0.5, 0.0), target, e); vEntranceAlpha = e; }
+
+    // ===== Morph family (33-41) — start on a shape, morph to text =====
+    else if (m == 33) { // morph-sphere
+      float e = easeOutPow(p, 3.0);
+      float phi = r * 3.14159;
+      float theta = r * 6.28318;
+      vec3 sph = vec3(cos(theta) * sin(phi), cos(phi), sin(theta) * sin(phi)) * maxR * 0.9;
+      pos = mix(sph, target, e); vEntranceAlpha = e;
+    }
+    else if (m == 34) { // morph-cube
+      float e = easeOutPow(p, 3.0);
+      float face = floor(r * 6.0);
+      vec2 uv = hash2(r * 50.0) * 2.0 - 1.0;
+      float s = maxR * 0.8;
+      vec3 cube;
+      if (face < 1.0) cube = vec3(s, uv.x * s, uv.y * s);
+      else if (face < 2.0) cube = vec3(-s, uv.x * s, uv.y * s);
+      else if (face < 3.0) cube = vec3(uv.x * s, s, uv.y * s);
+      else if (face < 4.0) cube = vec3(uv.x * s, -s, uv.y * s);
+      else if (face < 5.0) cube = vec3(uv.x * s, uv.y * s, s);
+      else cube = vec3(uv.x * s, uv.y * s, -s);
+      pos = mix(cube, target, e); vEntranceAlpha = e;
+    }
+    else if (m == 35) { // morph-grid
+      float e = easeOutPow(p, 3.0);
+      float cell = 30.0;
+      vec3 grid = vec3(floor(hash(r * 11.0) * 10.0) * cell - 150.0, floor(hash(r * 23.0) * 6.0) * cell - 90.0, 0.0);
+      pos = mix(grid, target, e); vEntranceAlpha = e;
+    }
+    else if (m == 36) { // morph-circle
+      float e = easeOutPow(p, 3.0);
+      float a = r * 6.28318;
+      vec3 circ = vec3(cos(a), sin(a), 0.0) * maxR * 0.9;
+      pos = mix(circ, target, e); vEntranceAlpha = e;
+    }
+    else if (m == 37) { // morph-line
+      float e = easeOutPow(p, 3.0);
+      vec3 line = vec3((r - 0.5) * W * 2.0, 0.0, 0.0);
+      pos = mix(line, target, e); vEntranceAlpha = e;
+    }
+    else if (m == 38) { // morph-cloud
+      float e = easeOutPow(p, 3.0);
+      pos = mix(aOrigin, target, e); vEntranceAlpha = e;
+    }
+    else if (m == 39) { // morph-spiral
+      float e = easeOutPow(p, 3.0);
+      float a = r * 6.28318 * 3.0;
+      float rr = r * maxR;
+      vec3 sp = vec3(cos(a) * rr, sin(a) * rr, 0.0);
+      pos = mix(sp, target, e); vEntranceAlpha = e;
+    }
+    else if (m == 40) { // morph-torus
+      float e = easeOutPow(p, 3.0);
+      float u = r * 6.28318;
+      float v = hash(r * 7.0) * 6.28318;
+      float R = maxR * 0.7; float rT = maxR * 0.25;
+      vec3 tor = vec3((R + rT * cos(v)) * cos(u), (R + rT * cos(v)) * sin(u), rT * sin(v));
+      pos = mix(tor, target, e); vEntranceAlpha = e;
+    }
+    else if (m == 41) { // morph-wave
+      float e = easeOutPow(p, 3.0);
+      vec3 wv = vec3((r - 0.5) * W * 2.0, sin(r * 10.0) * H * 0.3, cos(r * 8.0) * 60.0);
+      pos = mix(wv, target, e); vEntranceAlpha = e;
+    }
+
+    // ===== Physics family (42-48) =====
+    else if (m == 42) { // gravity-settle
+      float e = easeBounceOut(p);
+      pos = mix(target + vec3(0.0, H * 2.2, 0.0), target, e);
+      vEntranceAlpha = smoothstep(0.0, 0.1, p);
+    }
+    else if (m == 43) { // rain
+      float e = easeOutPow(p, 2.0);
+      float startY = H * 2.2 + r * H;
+      pos.y = mix(startY, target.y, e);
+      pos.x = mix(target.x + sin(r * 20.0) * 40.0, target.x, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 44) { // snow
+      float e = easeOutPow(p, 2.0);
+      float startY = H * 2.2 + r * H;
+      pos.y = mix(startY, target.y, e);
+      pos.x = mix(target.x + sin(p * 6.0 + r * 10.0) * 30.0, target.x, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 45) { // ascend
+      float e = easeOutPow(p, 2.0);
+      pos = mix(target - vec3(0.0, H * 2.2, 0.0), target, e);
+      pos.x += sin(p * 5.0 + r * 10.0) * 15.0 * (1.0 - e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 46) { // smoke
+      float e = easeOutPow(p, 2.0);
+      pos = mix(target - vec3(0.0, H * 2.2, 0.0), target, e);
+      pos.x += sin(p * 4.0 + r * 20.0) * 25.0 * (1.0 - e);
+      pos.z += (1.0 - e) * 40.0;
+      vEntranceAlpha = e * 0.85;
+    }
+    else if (m == 47) { // ember-rise
+      float e = easeOutPow(p, 2.0);
+      pos = mix(target - vec3(0.0, H * 2.2, 0.0), target, e);
+      pos.x += sin(p * 8.0 + r * 15.0) * 12.0 * (1.0 - e);
+      vEntranceAlpha = e;
+      vEntranceScale = 1.0 + (1.0 - e) * 1.5;
+    }
+    else if (m == 48) { // magnetic-snap
+      float e = easeBackOut(p);
+      pos = mix(aOrigin * 0.5, target, e);
+      vEntranceAlpha = smoothstep(0.0, 0.15, p);
+    }
+
+    // ===== Special family (49-74) =====
+    else if (m == 49) { // explode-inward
+      float e = easeOutPow(p, 3.0);
+      pos = mix(aOrigin * 2.0, target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 50) { // starburst — center, overshoot, settle
+      float e = easeBackOut(p);
+      pos = mix(vec3(0.0), target, e);
+      vEntranceAlpha = smoothstep(0.0, 0.1, p);
+    }
+    else if (m == 51) { // fireworks
+      float e = easeOutPow(p, 3.0);
+      vec3 burst = aOrigin * 0.8;
+      pos = mix(burst, target, e);
+      vEntranceAlpha = e * (0.7 + 0.3 * sin(p * 20.0));
+    }
+    else if (m == 52) { // vortex-in
+      float e = easeOutPow(p, 3.0);
+      float startR = maxR * 1.5;
+      float sa = ang + (1.0 - e) * 12.566;
+      pos.x = cos(sa) * mix(startR, dist, e);
+      pos.y = sin(sa) * mix(startR, dist, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 53) { // tornado-in
+      float e = easeOutPow(p, 3.0);
+      float startR = maxR * 1.5;
+      float sa = ang + (1.0 - e) * 18.849;
+      pos.x = cos(sa) * mix(startR, dist, e);
+      pos.y = sin(sa) * mix(startR, dist, e);
+      pos.z = (1.0 - e) * 100.0 * (r - 0.5);
+      vEntranceAlpha = e;
+    }
+    else if (m == 54) { // orbit-in
+      float e = easeOutPow(p, 3.0);
+      float a = ang + (1.0 - e) * 9.424;
+      float rr = mix(maxR * 1.3, dist, e);
+      pos.x = cos(a) * rr;
+      pos.y = sin(a) * rr;
+      vEntranceAlpha = e;
+    }
+    else if (m == 55) { // scatter-gather — expand past then contract
+      vec3 center = vec3(0.0);
+      vec3 outPos = mix(center, target, 1.3);
+      if (p < 0.5) { pos = mix(center, outPos, p / 0.5); }
+      else { pos = mix(outPos, target, (p - 0.5) / 0.5); }
+      vEntranceAlpha = smoothstep(0.0, 0.2, p);
+    }
+    else if (m == 56) { // teleport — sequential blink, no movement
+      float delay = aIndex * 0.8;
+      vEntranceAlpha = step(delay, p);
+    }
+    else if (m == 57) { // quantum-assemble — random-time blink
+      float delay = r * 0.9;
+      vEntranceAlpha = step(delay, p);
+    }
+    else if (m == 58) { // pixelate — quantized origin smooths to text
+      float e = easeOutPow(p, 3.0);
+      float g = 24.0;
+      vec3 quant = floor(target / g) * g;
+      pos = mix(quant, target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 59) { // dissolve-in — noise threshold reveal
+      float n = hash(r * 100.0 + target.x * 0.1 + target.y * 0.1);
+      vEntranceAlpha = step(1.0 - p, n);
+    }
+    else if (m == 60) { // materialize — fade + settle scatter
+      float e = easeOutPow(p, 3.0);
+      pos = target + (aOrigin - target) * (1.0 - e) * 0.3;
+      vEntranceAlpha = e;
+    }
+    else if (m == 61) { // blur-in — z-spread focuses to plane
+      float e = easeOutPow(p, 3.0);
+      pos.z = mix((r - 0.5) * 200.0, 0.0, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 62) { // scale-up — grow from 0
+      vEntranceScale = max(0.001, p);
+      vEntranceAlpha = p;
+    }
+    else if (m == 63) { // scale-down — shrink from huge
+      vEntranceScale = 1.0 + (1.0 - p) * 10.0;
+      vEntranceAlpha = p;
+    }
+    else if (m == 64) { // flip-x — 3D flip on X axis
+      float e = easeOutPow(p, 3.0);
+      float a = (1.0 - e) * 3.14159;
+      vEntranceScale = abs(cos(a)) * 0.9 + 0.1;
+      pos.z += sin(a) * 80.0;
+      vEntranceAlpha = e;
+    }
+    else if (m == 65) { // flip-y — 3D flip on Y axis
+      float e = easeOutPow(p, 3.0);
+      float a = (1.0 - e) * 3.14159;
+      vEntranceScale = abs(cos(a)) * 0.9 + 0.1;
+      pos.x += sin(a) * 40.0;
+      vEntranceAlpha = e;
+    }
+    else if (m == 66) { // cascade — sequential domino fall
+      float delay = aIndex * 0.8;
+      float lp = clamp((p - delay) / 0.2, 0.0, 1.0);
+      pos = mix(target - vec3(0.0, H, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 67) { // liquid-flow — viscous offscreen flow
+      float e = easeOutPow(p, 3.0);
+      vec3 off = target + vec3(-W * 2.0, 0.0, 0.0);
+      off.y += sin(off.x * 0.02 + p * 5.0) * 30.0;
+      pos = mix(off, target, e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 68) { // constellation-form — twinkle in sequentially
+      float delay = r * 0.7;
+      float lp = clamp((p - delay) / 0.3, 0.0, 1.0);
+      vEntranceAlpha = lp * (0.5 + 0.5 * sin(p * 20.0 + r * 30.0));
+      vEntranceScale = 1.0 + (1.0 - lp) * 1.5;
+    }
+    else if (m == 69) { // typewriter — left-to-right letter reveal
+      float delay = xNorm * 0.8;
+      vEntranceAlpha = step(delay, p);
+    }
+    else if (m == 70) { // curtain-open — split from center
+      float e = easeOutPow(p, 3.0);
+      float side = sign(target.x + 0.001);
+      pos.x = target.x + side * W * 0.8 * (1.0 - e);
+      vEntranceAlpha = e;
+    }
+    else if (m == 71) { // venetian-blinds — horizontal strips
+      float strips = 8.0;
+      float band = floor(yNorm * strips) / strips;
+      float delay = band * 0.8;
+      float lp = clamp((p - delay) / 0.2, 0.0, 1.0);
+      pos = mix(target + vec3(0.0, H * 0.3, 0.0), target, lp);
+      vEntranceAlpha = lp;
+    }
+    else if (m == 72) { // scanline — scanning line reveal
+      float scanY = mix(-H, H, p);
+      vEntranceAlpha = max(smoothstep(40.0, 0.0, abs(target.y - scanY)), step(target.y, scanY));
+    }
+    else if (m == 73) { // glitch-assemble — random offsets decay
+      float e = easeOutPow(p, 3.0);
+      vec3 gl = vec3(hash(r * 13.0) - 0.5, hash(r * 27.0) - 0.5, 0.0) * 80.0 * (1.0 - e);
+      pos = target + gl;
+      vEntranceAlpha = e;
+    }
+    else if (m == 74) { // ink-spread — spread from center like ink
+      float e = easeOutPow(p, 3.0);
+      vec2 dir = normalize(target.xy + vec2(0.001));
+      float rad = dist * e;
+      pos.x = dir.x * rad + sin(p * 10.0 + r * 6.28) * 10.0 * (1.0 - e);
+      pos.y = dir.y * rad + cos(p * 10.0 + r * 6.28) * 10.0 * (1.0 - e);
+      vEntranceAlpha = e;
+    }
+
+    return pos;
   }
 
   // Main displacement function — dispatches by uEffect.
@@ -617,17 +1178,18 @@ export const VERTEX_SHADER = /* glsl */ `
   }
 
   void main() {
-    vec3 displaced = displace(position);
+    vec3 entrancePos = applyEntrance(position);
+    vec3 displaced = displace(entrancePos);
     vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
-    // Size attenuation by distance, scaled by hover effect
-    float size = aSize * uPixelRatio * vHoverScale;
+    // Size attenuation by distance, scaled by hover + entrance effects
+    float size = aSize * uPixelRatio * vHoverScale * vEntranceScale;
     gl_PointSize = size * (300.0 / -mvPosition.z);
 
-    // Alpha: fade slightly when displaced + per-effect hover fade
+    // Alpha: fade slightly when displaced + per-effect hover/entrance fade
     float inf = influence();
-    vAlpha = (1.0 - inf * uStrength * 0.3) * vHoverFade;
+    vAlpha = (1.0 - inf * uStrength * 0.3) * vHoverFade * vEntranceAlpha;
     vGlow = inf * uStrength;
   }
 `;
