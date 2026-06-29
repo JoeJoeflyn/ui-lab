@@ -185,6 +185,23 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
   const DOT_COUNT = Math.min(12, implemented.length);
   const [idx, setIdx] = useState(0);
   const current = implemented[idx] ?? implemented[0];
+  // Auto-advance timer reference — reset on manual navigation
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scheduleAutoAdvance = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setIdx((i) => (i + 1) % implemented.length);
+    }, 5000);
+  }, [implemented.length]);
+
+  // Start / restart the auto-advance timer whenever the index changes
+  useEffect(() => {
+    scheduleAutoAdvance();
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [idx, scheduleAutoAdvance]);
 
   const next = useCallback(() => {
     setIdx((i) => (i + 1) % implemented.length);
@@ -297,7 +314,7 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
 
       {/* Interaction hint */}
       <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground/40">
-        Move cursor across canvas · Navigate with dots ·{" "}
+        Move cursor across canvas · Auto-cycling every 5s · Navigate with dots ·{" "}
         <span className="text-gold/50">{idx + 1} / {implemented.length}</span>
       </p>
     </section>

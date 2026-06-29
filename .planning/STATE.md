@@ -1,12 +1,12 @@
 ---
 gsd_state_version: '1.0'
-status: phase_complete
+status: project_complete
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 13
-  completed_plans: 12
-  percent: 92
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -16,16 +16,16 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Every effect card renders a live, interactive particle preview via the composite ParticleText component.
-**Current focus:** Phase 2 complete — Phase 3 (Gallery Polish) next
+**Current focus:** Phase 3 complete — project at 100%
 
 ## Current Position
 
-Phase: 2 of 3 (Entrance Effects) — COMPLETE
-Plan: 12 of 13 in current phase
-Status: Phase complete
-Last activity: 2025-06-29 — Added 75 entrance effects (uEntranceMode/uProgress + aOrigin/aIndex attributes + applyEntrance if-chain); all entrance cards now live
+Phase: 3 of 3 (Gallery Polish) — COMPLETE
+Plan: 13 of 13 total
+Status: Project complete
+Last activity: 2025-06-29 — Phase 3 Gallery Polish: added hero auto-advance timer (5s), hero now cycles through interleaved hover+entrance sample, verified all 125 effects live, WebGL cleanup correct, build passes clean
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Phase 1 Tracker
 

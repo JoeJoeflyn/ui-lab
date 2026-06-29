@@ -6,9 +6,9 @@ Take the gallery from 8/50 hover effects (0 entrance) to the full 125-effect spe
 
 ## Phases
 
-- [ ] **Phase 1: Hover Effects Completion** — Implement the remaining 42 hover effects as GLSL branches
-- [ ] **Phase 2: Entrance Effects** — Implement all 75 entrance effects (origin + progress mix)
-- [ ] **Phase 3: Gallery Polish** — Make every card composite, fix UI issues
+- [x] **Phase 1: Hover Effects Completion** — Implement the remaining 42 hover effects as GLSL branches
+- [x] **Phase 2: Entrance Effects** — Implement all 75 entrance effects (origin + progress mix)
+- [x] **Phase 3: Gallery Polish** — Make every card composite, fix UI issues
 
 ## Phase Details
 
@@ -62,4 +62,4 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 03-01: Convert all placeholder cards to composite previews + final QA
+- [x] 03-01: Convert all placeholder cards to composite previews + final QA

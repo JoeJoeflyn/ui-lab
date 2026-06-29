@@ -7,6 +7,18 @@ import {
   groupByCategory,
   type Effect,
 } from "@/lib/effects";
+// Representative sample for the hero: interleave hover + entrance effects
+const HERO_SAMPLE: Effect[] = (() => {
+  const hover = HOVER_EFFECTS.filter((e) => e.implemented);
+  const entrance = ENTRANCE_EFFECTS.filter((e) => e.implemented);
+  const sample: Effect[] = [];
+  const maxLen = Math.max(hover.length, entrance.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < hover.length) sample.push(hover[i]);
+    if (i < entrance.length) sample.push(entrance[i]);
+  }
+  return sample;
+})();
 import { EffectHero, EffectMiniCard } from "@/components/effect-cards";
 import { ArtworkExhibit } from "@/components/artwork-exhibit";
 
@@ -113,7 +125,7 @@ export default function HomePage() {
         </section>
 
         {/* ---- Centerpiece Exhibit ---- */}
-        <EffectHero effects={HOVER_EFFECTS} />
+        <EffectHero effects={HERO_SAMPLE} />
 
         {/* ---- Gallery Navigation ---- */}
         <nav className="mb-20 flex flex-wrap justify-center gap-5">
