@@ -17,10 +17,6 @@ const LOOKUP = new Map(ARTWORKS.map((a) => [a.id, a]));
 
 const DISPLAY_IDS = ARTWORKS.map((a) => a.id);
 
-// Tiny dark placeholder for blur-up effect (4x4 dark rect SVG)
-const BLUR_PLACEHOLDER =
-  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMwYzBmMWEiLz48L3N2Zz4=";
-
 export function ArtworkExhibit() {
   return (
     <section className="mb-16">
@@ -73,7 +69,6 @@ function ArtworkCard({
 }) {
   const [visible, setVisible] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,11 +114,8 @@ function ArtworkCard({
               src={artwork.imageUrl}
               alt={`${artwork.title} by ${artwork.artist}`}
               fill
-              className={`object-contain transition-all duration-700 group-hover:opacity-0 ${imgLoaded ? "opacity-70" : "opacity-0"}`}
-              placeholder="blur"
-              blurDataURL={BLUR_PLACEHOLDER}
+              className="object-contain opacity-70 transition-opacity duration-500 group-hover:opacity-0"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              onLoad={() => setImgLoaded(true)}
             />
           </div>
         )}
