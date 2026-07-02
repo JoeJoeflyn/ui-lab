@@ -1,11 +1,59 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { ALL_EFFECTS, getEffectBySlug } from "@/lib/effects";
+import { getBaseUrl } from "@/lib/url";
 import { EffectPreview } from "@/components/effect-preview";
 import { CodeBlock } from "@/components/code-block";
 
 export function generateStaticParams() {
   return ALL_EFFECTS.map((e) => ({ slug: e.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const effect = getEffectBySlug(slug);
+  if (!effect) return {};
+
+  const baseUrl = await getBaseUrl();
+  const title = `${effect.name} — ${effect.kind === "hover" ? "Hover" : "Entrance"} Particle Effect | UI Lab`;
+  const description = `${effect.name}: ${effect.feel}. ${effect.technique}. Live interactive preview with copy-paste React + GLSL code. Part of UI Lab's 125+ GPU shader effect gallery.`;
+
+  return {
+    title,
+    description,
+    keywords: [
+      effect.name,
+      effect.slug,
+      `${effect.kind} effect`,
+      "particle effect",
+      "GLSL shader",
+      "Three.js",
+      "WebGL",
+      "GPU text animation",
+      effect.category,
+      "React component",
+    ],
+    alternates: {
+      canonical: `${baseUrl}/effects/${effect.slug}`,
+    },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url: `${baseUrl}/effects/${effect.slug}`,
+      siteName: "UI Lab",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
 }
 
 export default function EffectPage({

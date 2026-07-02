@@ -24,11 +24,11 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
   const [copied, setCopied] = useState(false);
   const cardRef = useRef<HTMLAnchorElement>(null);
   const [revealed, setRevealed] = useState(false);
-  // Entrance cards: mount WebGL once when first visible, then pause/unpause on scroll.
+  // Entrance cards: mount WebGL when in view, unmount when scrolled away.
   // Hover cards: only mount WebGL on hover.
   const [mounted, setMounted] = useState(false);
   const [inView, setInView] = useState(false);
-  const shouldRender = isEntrance ? mounted : hovered;
+  const shouldRender = isEntrance ? inView && mounted : hovered;
   const paused = isEntrance ? !inView : !hovered;
 
   useEffect(() => {
@@ -45,6 +45,8 @@ export function EffectMiniCard({ effect, index = 0 }: { effect: Effect; index?: 
           setInView(true);
         } else {
           setInView(false);
+          // Reset so entrance re-triggers on scroll-back
+          if (isEntrance) setMounted(false);
         }
       },
       { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
@@ -205,7 +207,7 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
         {/* Hero spotlight — stronger radial glow */}
         <div className="painting-glow !opacity-100"
           style={{
-            background: `radial-gradient(ellipse 70% 50% at 50% 0%, oklch(0.82 0.16 85 / 0.08), transparent 70%)`,
+            background: `radial-gradient(ellipse 70% 50% at 50% 0%, color-mix(in oklch, var(--gold) 8%, transparent), transparent 70%)`,
           }}
         />
 
@@ -276,7 +278,7 @@ export function EffectHero({ effects }: { effects: Effect[] }) {
         <div
           className="pointer-events-none absolute bottom-0 left-0 right-0 h-24"
           style={{
-            background: "linear-gradient(to top, oklch(0.10 0.025 260) 0%, transparent 100%)",
+            background: "linear-gradient(to top, #0a0a12 0%, transparent 100%)",
             zIndex: 3,
           }}
         />

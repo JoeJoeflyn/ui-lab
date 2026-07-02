@@ -7,20 +7,12 @@ import {
   groupByCategory,
   type Effect,
 } from "@/lib/effects";
-// Representative sample for the hero: interleave hover + entrance effects
-const HERO_SAMPLE: Effect[] = (() => {
-  const hover = HOVER_EFFECTS.filter((e) => e.implemented);
-  const entrance = ENTRANCE_EFFECTS.filter((e) => e.implemented);
-  const sample: Effect[] = [];
-  const maxLen = Math.max(hover.length, entrance.length);
-  for (let i = 0; i < maxLen; i++) {
-    if (i < hover.length) sample.push(hover[i]);
-    if (i < entrance.length) sample.push(entrance[i]);
-  }
-  return sample;
-})();
-import { EffectHero, EffectMiniCard } from "@/components/effect-cards";
+import { EffectMiniCard } from "@/components/effect-cards";
+import { ArtworkHero } from "@/components/artwork-hero";
 import { ArtworkExhibit } from "@/components/artwork-exhibit";
+import { AsciiArt } from "@/components/ascii-art";
+import { AntText } from "@/components/ant-text";
+import { FooterAntPainting } from "@/components/footer-ant-painting";
 
 function CategorySection({
   title,
@@ -70,7 +62,7 @@ export default function HomePage() {
   let cardIndex = 0;
 
   return (
-    <main className="relative overflow-hidden brushstroke-bg">
+    <main className="relative overflow-clip brushstroke-bg">
       {/* ===== Grain Texture Overlay ===== */}
       <div className="grain-overlay" aria-hidden="true" />
 
@@ -84,19 +76,6 @@ export default function HomePage() {
       <div className="relative mx-auto max-w-7xl px-6 py-16 sm:py-20">
         {/* ---- Hero / Museum Entrance ---- */}
         <section className="mb-12 text-center sm:mb-16">
-          {/* Logo mark */}
-          <div className="mx-auto mb-6 flex items-center justify-center gap-3">
-            <svg width="40" height="40" viewBox="0 0 28 28" fill="none" className="text-gold">
-              <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="1" opacity="0.3" />
-              <circle cx="14" cy="14" r="7" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-              <circle cx="14" cy="14" r="2.5" fill="currentColor" />
-              <circle cx="14" cy="2" r="1" fill="currentColor" opacity="0.6" />
-              <circle cx="26" cy="14" r="1" fill="currentColor" opacity="0.6" />
-              <circle cx="14" cy="26" r="1" fill="currentColor" opacity="0.6" />
-              <circle cx="2" cy="14" r="1" fill="currentColor" opacity="0.6" />
-            </svg>
-          </div>
-
           <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.35em] text-gold/55">
             Gallery of GPU Shader Art
           </p>
@@ -125,32 +104,7 @@ export default function HomePage() {
         </section>
 
         {/* ---- Centerpiece Exhibit ---- */}
-        <EffectHero effects={HERO_SAMPLE} />
-
-        {/* ---- Gallery Navigation ---- */}
-        <nav className="mb-20 flex flex-wrap justify-center gap-5">
-          <a
-            href="#west-wing"
-            className="plaque-gold group rounded-full px-5 py-2 text-xs text-gold/75 transition-all duration-300 hover:px-6"
-          >
-            <span className="mr-1.5 font-mono text-[9px] text-gold/40">01</span>
-            Interactive Gallery
-          </a>
-          <a
-            href="#east-wing"
-            className="plaque-gold group rounded-full px-5 py-2 text-xs text-gold/75 transition-all duration-300 hover:px-6"
-          >
-            <span className="mr-1.5 font-mono text-[9px] text-gold/40">02</span>
-            Cinematic Collection
-          </a>
-          <a
-            href="#salon"
-            className="plaque-gold group rounded-full px-5 py-2 text-xs text-gold/75 transition-all duration-300 hover:px-6"
-          >
-            <span className="mr-1.5 font-mono text-[9px] text-gold/40">03</span>
-            Particle Paintings
-          </a>
-        </nav>
+        <ArtworkHero />
 
         {/* ================================================================
             WEST WING — Interactive Effects (Hover)
@@ -251,59 +205,169 @@ export default function HomePage() {
         {/* ================================================================
             SALON — Particle Paintings
             ================================================================ */}
-        <div id="salon">
+        <div id="salon" className="mb-28">
+          {/* Section header */}
+          <div className="mb-12">
+            <div className="mb-4 flex items-center gap-4">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-gold/40">
+                Salon
+              </span>
+              <div className="brushstroke-divider flex-1" />
+            </div>
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <div>
+                <h2
+                  className="text-3xl font-bold text-card-foreground sm:text-4xl"
+                  style={{ fontFamily: "var(--font-heading), serif" }}
+                >
+                  Particle Paintings
+                </h2>
+                <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-muted-foreground/80">
+                  Masterworks rendered as thousands of GPU particles.
+                  Hover to scatter — watch them reform into the painting.
+                </p>
+              </div>
+            </div>
+          </div>
           <ArtworkExhibit />
         </div>
 
         {/* ================================================================
-            FOOTER — Museum Plaque
+            TERMINAL — ASCII Art Animation
             ================================================================ */}
-        <footer className="mx-auto mt-8 max-w-2xl rounded-lg plaque-gold px-8 py-8 text-center">
-          {/* Logo mark */}
-          <div className="mx-auto mb-4 flex items-center justify-center gap-2.5">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" className="text-gold">
-              <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="1" opacity="0.3" />
-              <circle cx="14" cy="14" r="7" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-              <circle cx="14" cy="14" r="2.5" fill="currentColor" />
-              <circle cx="14" cy="2" r="1" fill="currentColor" opacity="0.6" />
-              <circle cx="26" cy="14" r="1" fill="currentColor" opacity="0.6" />
-              <circle cx="14" cy="26" r="1" fill="currentColor" opacity="0.6" />
-              <circle cx="2" cy="14" r="1" fill="currentColor" opacity="0.6" />
-            </svg>
-            <span
-              className="text-lg font-bold tracking-tight text-card-foreground"
-              style={{ fontFamily: "var(--font-heading), serif" }}
-            >
-              UI Lab
-            </span>
+        <section id="ascii" className="mb-28 scroll-mt-8">
+          {/* Section header */}
+          <div className="mb-12">
+            <div className="mb-4 flex items-center gap-4">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-gold/40">
+                Terminal
+              </span>
+              <div className="brushstroke-divider flex-1" />
+            </div>
+
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <div>
+                <h2
+                  className="text-3xl font-bold text-card-foreground sm:text-4xl"
+                  style={{ fontFamily: "var(--font-heading), serif" }}
+                >
+                  ASCII Animation
+                </h2>
+                <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-muted-foreground/80">
+                  Figlet-rendered text art cycling through the gallery's core themes.
+                  Animated with character dissolve transitions and CRT scanline effects.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="mx-auto mb-4 w-16 brushstroke-divider" />
+          {/* ASCII art terminal component */}
+          <AsciiArt />
+        </section>
 
-          <p
-            className="text-sm text-card-foreground"
-            style={{ fontFamily: "var(--font-heading), serif" }}
-          >
-            {ALL_EFFECTS.length} works in the collection
-          </p>
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-gold/50">
-            <span className="text-gold/70">
-              {HOVER_EFFECTS.filter((e) => e.implemented).length} live exhibits
-            </span>
-            <span className="mx-2 text-muted-foreground/30">·</span>
-            {ENTRANCE_EFFECTS.filter((e) => e.implemented).length} cinematic
-          </p>
+        {/* ================================================================
+            ANT COLONY — AntText swarm
+            ================================================================ */}
+        <section id="colony" className="mb-28 scroll-mt-8">
+          {/* Section header */}
+          <div className="mb-12">
+            <div className="mb-4 flex items-center gap-4">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-gold/40">
+                Colony
+              </span>
+              <div className="brushstroke-divider flex-1" />
+            </div>
 
-          <div className="mx-auto my-4 w-16 brushstroke-divider" />
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <div>
+                <h2
+                  className="text-3xl font-bold text-card-foreground sm:text-4xl"
+                  style={{ fontFamily: "var(--font-heading), serif" }}
+                >
+                  Ant Text
+                </h2>
+                <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-muted-foreground/80">
+                  1,500 ants with detailed sprites — body, legs, antennae — crawl across the canvas,
+                  wandering and stopping like a real colony. They converge to form words, scatter, and reform.
+                </p>
+              </div>
+              <span className="gold-pill text-[9px]">auto-cycling</span>
+            </div>
+          </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/40">
-            <a href="https://github.com/JoeJoeflyn/ui-lab" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold/60">
-              GitHub
-            </a>
-            <span className="text-muted-foreground/20">·</span>
-            <span>GLSL · Three.js · Next.js</span>
-            <span className="text-muted-foreground/20">·</span>
-            <span>Open Source</span>
+          <AntText />
+        </section>
+
+        {/* ================================================================
+            FOOTER — Ant colony paintings + museum plaque
+            Painting fills the footer, text sits in a compact bar at bottom
+            ================================================================ */}
+        <footer className="relative mt-8 overflow-hidden rounded-xl border border-gold/25 bg-card">
+          {/* GPU particle colony forming paintings — fills footer */}
+          <div className="relative h-[360px] w-full bg-black">
+            <FooterAntPainting />
+          </div>
+
+          {/* Content bar — below painting, solid background, no overlap */}
+          <div className="border-t border-gold/20 bg-background px-8 py-8">
+            <div className="mx-auto max-w-3xl text-center">
+              {/* Logo mark + name */}
+              <div className="mx-auto mb-4 flex items-center justify-center gap-3">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" className="text-gold">
+                  <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+                  <circle cx="14" cy="14" r="7" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                  <circle cx="14" cy="14" r="2.5" fill="currentColor" />
+                  <circle cx="14" cy="2" r="1" fill="currentColor" opacity="0.7" />
+                  <circle cx="26" cy="14" r="1" fill="currentColor" opacity="0.7" />
+                  <circle cx="14" cy="26" r="1" fill="currentColor" opacity="0.7" />
+                  <circle cx="2" cy="14" r="1" fill="currentColor" opacity="0.7" />
+                </svg>
+                <span
+                  className="text-lg font-bold tracking-tight text-foreground"
+                  style={{ fontFamily: "var(--font-heading), serif" }}
+                >
+                  UI Lab
+                </span>
+              </div>
+
+              {/* Collection stats */}
+              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                <span className="text-gold">
+                  {HOVER_EFFECTS.filter((e) => e.implemented).length} live exhibits
+                </span>
+                <span className="mx-2 text-muted-foreground/40">·</span>
+                <span className="text-starry-cyan">
+                  {ENTRANCE_EFFECTS.filter((e) => e.implemented).length} cinematic
+                </span>
+                <span className="mx-2 text-muted-foreground/40">·</span>
+                <span className="text-foreground">{ALL_EFFECTS.length} works</span>
+              </p>
+
+              {/* Tech stack + Links — inline */}
+              <div className="flex flex-wrap items-center justify-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em]">
+                <span className="text-muted-foreground">GLSL</span>
+                <span className="text-muted-foreground/30">·</span>
+                <span className="text-muted-foreground">Three.js</span>
+                <span className="text-muted-foreground/30">·</span>
+                <span className="text-muted-foreground">Next.js</span>
+                <span className="mx-2 text-gold/40">|</span>
+                <a
+                  href="https://github.com/JoeJoeflyn/ui-lab"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground transition-colors hover:text-gold"
+                >
+                  GitHub
+                </a>
+                <span className="text-muted-foreground/40">·</span>
+                <span className="text-foreground">MIT License</span>
+              </div>
+
+              {/* Tagline */}
+              <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.3em] text-muted-foreground">
+                Crafted with GPU particles & GLSL shaders
+              </p>
+            </div>
           </div>
         </footer>
       </div>

@@ -71,6 +71,16 @@ export const ARTWORKS: Artwork[] = [
     imageUrl: "/artworks/liberty-leading.jpg",
   },
   {
+    id: "napoleon-alps",
+    title: "Napoleon Crossing the Alps",
+    artist: "Jacques-Louis David",
+    year: "1801",
+    period: "Neoclassicism",
+    medium: "Oil on canvas",
+    museum: "Palace of Versailles",
+    imageUrl: "/artworks/napoleon-alps.jpg",
+  },
+  {
     id: "the-scream",
     title: "The Scream",
     artist: "Edvard Munch",
@@ -159,5 +169,39 @@ export const ARTWORKS: Artwork[] = [
     medium: "Pastel on paper",
     museum: "Musée d'Orsay, Paris",
     imageUrl: "/artworks/the-star.jpg",
+  },
+  {
+    id: "last-supper",
+    title: "The Last Supper",
+    artist: "Leonardo da Vinci",
+    year: "c. 1495–1498",
+    period: "High Renaissance",
+    medium: "Tempera and oil on plaster",
+    museum: "Santa Maria delle Grazie, Milan",
+    imageUrl: "/artworks/last-supper.jpg",
+  },
+  {
+    id: "declaration-independence",
+    title: "Declaration of Independence",
+    artist: "John Trumbull",
+    year: "1819",
+    period: "Neoclassicism",
+    medium: "Oil on canvas",
+    museum: "U.S. Capitol Rotunda, Washington D.C.",
+    imageUrl: "/artworks/declaration-independence.jpg",
+  },
+];
+
+// Footer-only artworks — not shown in the main gallery
+export const FOOTER_ARTWORKS: Artwork[] = [
+  {
+    id: "mouth-delaware",
+    title: "Mouth of the Delaware",
+    artist: "Thomas Birch",
+    year: "1828",
+    period: "Early American Marine",
+    medium: "Oil on canvas",
+    museum: "The White House, Washington D.C.",
+    imageUrl: "/artworks/mouth-delaware.jpg",
   },
 ];

@@ -5,6 +5,16 @@ import * as THREE from "three";
 import type { Artwork } from "@/lib/artworks";
 
 /* ──────────────────────────────────────────────────────────────
+ * createGLRenderer — create a THREE WebGLRenderer on a canvas.
+ *
+ * THREE.js registers webglcontextrestored on the canvas during
+ * construction. If the constructor throws (context limit), the
+ * listener is orphaned. By creating the canvas imperatively and
+ * removing it in cleanup, the element + its listeners are GC'd.
+ * ────────────────────────────────────────────────────────────── */
+// ponytail: createGLRenderer was unused — inline try/catch in useEffect instead
+
+/* ──────────────────────────────────────────────────────────────
  * ParticlePainting — renders an artwork as GPU particles
  *
  * Three.js with a single Points draw call (fast):
@@ -20,6 +30,8 @@ interface Props {
   particleCount?: number;
   cursorRadius?: number;
   scatterStrength?: number;
+  sampleWidth?: number;
+  sampleStep?: number;
 }
 
 export function ParticlePainting({
@@ -27,10 +39,13 @@ export function ParticlePainting({
   className = "",
   cursorRadius = 100,
   scatterStrength = 4,
+  sampleWidth = 600,
+  sampleStep = 2,
 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
+  const [inView, setInView] = useState(false);
   const sceneRef = useRef<{
     scene: THREE.Scene;
     camera: THREE.OrthographicCamera;
@@ -39,15 +54,42 @@ export function ParticlePainting({
     material: THREE.ShaderMaterial;
     raf: number;
     mouse: { x: number; y: number; active: boolean };
+    mouseStrength: number;
+    bursts: { x: number; y: number; strength: number; radius: number }[];
     homePositions: Float32Array;
     currentPositions: Float32Array;
     count: number;
   } | null>(null);
 
+  // Two-way IntersectionObserver — create scene when in view, dispose when out
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const o = new IntersectionObserver(
+      ([entry]) => {
+        if (timer) clearTimeout(timer);
+        // Debounce: wait 300ms after last scroll event to avoid rapid create/dispose
+        timer = setTimeout(() => setInView(entry.isIntersecting), 300);
+      },
+      { threshold: 0.01, rootMargin: "100px 0px" },
+    );
+    o.observe(el);
+    return () => {
+      o.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
   useEffect(() => {
     const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (!container || !canvas) return;
+    if (!container || !inView) return;
+
+    // Create canvas imperatively so cleanup can fully remove it (GC takes orphaned THREE.js listeners)
+    const canvas = document.createElement("canvas");
+    canvas.className = "block h-full w-full";
+    canvasRef.current = canvas;
+    container.append(canvas);
 
     const img = new Image();
     img.src = artwork.imageUrl;
@@ -60,7 +102,7 @@ export function ParticlePainting({
 
       // Sample image on a grid
       const sampleCanvas = document.createElement("canvas");
-      const sampleW = Math.min(img.naturalWidth, 400);
+      const sampleW = Math.min(img.naturalWidth, sampleWidth);
       const sampleH = Math.floor(sampleW * img.naturalHeight / img.naturalWidth);
       sampleCanvas.width = sampleW;
       sampleCanvas.height = sampleH;
@@ -86,8 +128,8 @@ export function ParticlePainting({
         offsetY = 0;
       }
 
-      // Grid sample — every STEP pixels
-      const STEP = 3;
+      // Grid sample
+      const STEP = sampleStep;
       const positions: number[] = [];
       const colors: number[] = [];
       const sizes: number[] = [];
@@ -102,7 +144,7 @@ export function ParticlePainting({
           if (a < 30) continue;
 
           const brightness = (r + g + b) / 3;
-          const size = 0.8 + (brightness / 255) * 2.5;
+          const size = 0.6 + (brightness / 255) * 2.2;
 
           const dx = (px / sampleW) * scaleW + offsetX - w / 2;
           const dy = -(py / sampleH) * scaleH - offsetY + h / 2;
@@ -127,7 +169,7 @@ export function ParticlePainting({
       // Shader material — single draw call
       const material = new THREE.ShaderMaterial({
         uniforms: {
-          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2.5) },
         },
         vertexShader: `
           attribute vec3 aColor;
@@ -148,7 +190,7 @@ export function ParticlePainting({
             float d = length(c);
             if (d > 0.5) discard;
             float alpha = 1.0 - smoothstep(0.3, 0.5, d);
-            gl_FragColor = vec4(vColor, alpha * 0.9);
+            gl_FragColor = vec4(vColor, alpha * 1.0);
           }
         `,
         transparent: true,
@@ -161,13 +203,21 @@ export function ParticlePainting({
       const camera = new THREE.OrthographicCamera(-w / 2, w / 2, h / 2, -h / 2, -500, 500);
       camera.position.z = 100;
 
-      const renderer = new THREE.WebGLRenderer({
-        canvas,
-        alpha: true,
-        antialias: false,
-      });
+      let renderer: THREE.WebGLRenderer;
+      try {
+        renderer = new THREE.WebGLRenderer({
+          canvas,
+          alpha: false,
+          antialias: false,
+        });
+      } catch {
+        setLoaded(true);
+        return;
+      }
       renderer.setSize(w, h, false);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
+      // Always render on a dark "gallery wall" — paintings look best on dark background
+      renderer.setClearColor(0x0a0a12, 1);
 
       const points = new THREE.Points(geometry, material);
       points.frustumCulled = false;
@@ -181,12 +231,21 @@ export function ParticlePainting({
         material,
         raf: 0,
         mouse: { x: 0, y: 0, active: false },
+        mouseStrength: 0,
+        bursts: [] as { x: number; y: number; strength: number; radius: number }[],
         homePositions,
         currentPositions,
         count,
       };
       sceneRef.current = ctx;
       setLoaded(true);
+
+      // ponytail: stop animation loop on context loss — component will remount on scroll
+      canvas.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        cancelAnimationFrame(ctx.raf);
+        ctx.raf = 0;
+      });
 
       // Animation loop — JS physics, GPU render
       const animate = () => {
@@ -197,10 +256,18 @@ export function ParticlePainting({
         const home = ctx.homePositions;
         const mx = ctx.mouse.x;
         const my = ctx.mouse.y;
-        const active = ctx.mouse.active;
+        const target = ctx.mouse.active ? 1 : 0;
+        ctx.mouseStrength += (target - ctx.mouseStrength) * 0.06;
         const radius = cursorRadius;
         const radiusSq = radius * radius;
-        const strength = scatterStrength;
+        const strength = scatterStrength * ctx.mouseStrength;
+
+        // Update bursts — expand radius and fade strength
+        ctx.bursts = ctx.bursts.filter((b) => b.strength > 0.01);
+        for (const b of ctx.bursts) {
+          b.radius += 8;
+          b.strength *= 0.92;
+        }
 
         for (let i = 0; i < ctx.count; i++) {
           const i3 = i * 3;
@@ -210,7 +277,7 @@ export function ParticlePainting({
           const cy = arr[i3 + 1];
 
           // Mouse repulsion
-          if (active) {
+          if (strength > 0.01) {
             const dx = cx - mx;
             const dy = cy - my;
             const distSq = dx * dx + dy * dy;
@@ -219,9 +286,20 @@ export function ParticlePainting({
               const force = (1 - dist / radius) * strength;
               const pushX = (dx / dist) * force;
               const pushY = (dy / dist) * force;
-              // Apply as velocity offset (spring will pull back)
               arr[i3] = cx + pushX;
               arr[i3 + 1] = cy + pushY;
+            }
+          }
+
+          // Click burst — expanding ring push
+          for (const b of ctx.bursts) {
+            const bdx = cx - b.x;
+            const bdy = cy - b.y;
+            const bdist = Math.sqrt(bdx * bdx + bdy * bdy);
+            if (Math.abs(bdist - b.radius) < 40 && bdist > 0.1) {
+              const force = b.strength * 8;
+              arr[i3] += (bdx / bdist) * force;
+              arr[i3 + 1] += (bdy / bdist) * force;
             }
           }
 
@@ -245,9 +323,10 @@ export function ParticlePainting({
         ctx.material.dispose();
         sceneRef.current = null;
       }
+      if (canvas.parentNode) canvas.remove();
+      canvasRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [artwork.imageUrl]);
+  }, [artwork.imageUrl, inView]);
 
   // Mouse tracking
   useEffect(() => {
@@ -268,6 +347,18 @@ export function ParticlePainting({
       if (ctx) ctx.mouse.active = false;
     };
 
+    const onClick = (e: MouseEvent) => {
+      const ctx = sceneRef.current;
+      if (!ctx) return;
+      const rect = container.getBoundingClientRect();
+      ctx.bursts.push({
+        x: e.clientX - rect.left - rect.width / 2,
+        y: -(e.clientY - rect.top - rect.height / 2),
+        strength: 1,
+        radius: 0,
+      });
+    };
+
     const onTouch = (e: TouchEvent) => {
       const ctx = sceneRef.current;
       if (!ctx || e.touches.length === 0) return;
@@ -284,11 +375,13 @@ export function ParticlePainting({
 
     container.addEventListener("mousemove", onMove);
     container.addEventListener("mouseleave", onLeave);
+    container.addEventListener("click", onClick);
     container.addEventListener("touchmove", onTouch, { passive: true });
     container.addEventListener("touchend", onTouchEnd);
     return () => {
       container.removeEventListener("mousemove", onMove);
       container.removeEventListener("mouseleave", onLeave);
+      container.removeEventListener("click", onClick);
       container.removeEventListener("touchmove", onTouch);
       container.removeEventListener("touchend", onTouchEnd);
     };
@@ -306,10 +399,6 @@ export function ParticlePainting({
           </span>
         </div>
       )}
-      <canvas
-        ref={canvasRef}
-        className="block h-full w-full"
-      />
     </div>
   );
 }

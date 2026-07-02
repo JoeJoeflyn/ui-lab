@@ -49,6 +49,11 @@ Progress: [██████████] 100%
 | 02-05 | Physics | gravity-settle, rain, snow, ascend, smoke, ember-rise, magnetic-snap | done |
 | 02-06 | Special | explode-inward, starburst, fireworks, vortex-in, tornado-in, orbit-in, scatter-gather, teleport, quantum-assemble, pixelate, dissolve-in, materialize, blur-in, scale-up, scale-down, flip-x, flip-y, cascade, liquid-flow, constellation-form, typewriter, curtain-open, venetian-blinds, scanline, glitch-assemble, ink-spread | done |
 
+## Accumulated Context
+
+### Roadmap Evolution
+- Phase 4 added: Ant Colony Component & Copy-to-Clipboard Feature
+
 ## Notes
 
 - Baseline: 8 hover effects already implemented (dissolve, explode, vortex, magnet, wave, glitch, blackhole, ember)
